@@ -12,6 +12,7 @@ import AdminNewWeek from './pages/admin/AdminNewWeek'
 import AdminWeekManage from './pages/admin/AdminWeekManage'
 import AdminTournament from './pages/admin/AdminTournament'
 import AdminChat from './pages/admin/AdminChat'
+import ActiveSession from './pages/ActiveSession'
 import { isAdmin } from './lib/auth'
 
 function RequireAdmin({ children }) {
@@ -26,6 +27,7 @@ export default function App() {
       <Route path="/weeks" element={<Layout><WeekList /></Layout>} />
       <Route path="/weeks/:id" element={<Layout><WeekDetail /></Layout>} />
       <Route path="/tournament" element={<Layout><Tournament /></Layout>} />
+      <Route path="/active" element={<Layout><ActiveSession /></Layout>} />
       <Route path="/rules" element={<Layout><Rules /></Layout>} />
       <Route path="/admin/login" element={<Layout><AdminLogin /></Layout>} />
 
