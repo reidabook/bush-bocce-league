@@ -198,8 +198,16 @@ export default async function handler(req, res) {
 // ─── Tool execution ───────────────────────────────────────────────────────────
 
 async function executeTool(name, args, ctx, supabase) {
-  const { week, teams, games } = ctx ?? {}
+  const { week, teams } = ctx ?? {}
   if (!week) return { error: 'No active session context.' }
+
+  // Always fetch fresh games to avoid stale state across agentic loop turns
+  // (ctx.games is a snapshot from the original request; add_game adds to DB but not ctx)
+  const { data: games = [] } = await supabase
+    .from('games')
+    .select('*')
+    .eq('week_id', week.id)
+    .order('created_at', { ascending: true })
 
   const teamByName = Object.fromEntries(teams.map((t) => [t.name.toLowerCase(), t]))
 
@@ -211,11 +219,17 @@ async function executeTool(name, args, ctx, supabase) {
     const tA = findTeam(aName)
     const tB = findTeam(bName)
     if (!tA || !tB) return null
-    return games.find(
+    const matches = games.filter(
       (g) =>
         (g.team_a_id === tA.id && g.team_b_id === tB.id) ||
         (g.team_a_id === tB.id && g.team_b_id === tA.id)
     )
+    // Prefer the first game without a result so that when there are multiple
+    // games between the same two teams, record_result targets the newest
+    // unresolved one rather than always overwriting the first game.
+    // Return null (not the last resolved game) so the AI is forced to call
+    // add_game before record_result when no unresolved game exists.
+    return matches.find((g) => !g.winner_team_id) ?? null
   }
 
   try {
