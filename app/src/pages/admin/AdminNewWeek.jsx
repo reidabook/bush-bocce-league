@@ -14,6 +14,12 @@ function shuffle(arr) {
 
 const TEAM_COLORS = ['Red', 'Green', 'Blue', 'Yellow', 'Orange', 'Purple', 'Black']
 
+function deriveNumTeams(playerCount, playersPerTeam) {
+  const raw = Math.round(playerCount / playersPerTeam)
+  const n = raw < 3 ? 3 : raw
+  return n % 2 === 0 ? n + 1 : n  // must be odd
+}
+
 function buildTeams(players, numTeams) {
   const shuffled = shuffle(players)
   const teams = Array.from({ length: numTeams }, (_, i) => ({
@@ -37,7 +43,7 @@ export default function AdminNewWeek() {
 
   // Step 1
   const [date, setDate] = useState(new Date().toISOString().split('T')[0])
-  const [numTeams, setNumTeams] = useState(3)
+  const [playersPerTeam, setPlayersPerTeam] = useState(2)
 
   // Step 2
   const [selected, setSelected] = useState(new Set())
@@ -66,17 +72,14 @@ export default function AdminNewWeek() {
 
   function generateTeams() {
     const attending = allPlayers.filter((p) => selected.has(p.id))
+    const numTeams = deriveNumTeams(attending.length, playersPerTeam)
     setTeams(buildTeams(attending, numTeams))
   }
 
   function goToStep3() {
+    const numTeams = deriveNumTeams(selected.size, playersPerTeam)
     if (selected.size < numTeams) {
-      setError(`Select at least ${numTeams} players (one per team).`)
-      return
-    }
-    const maxPerTeam = Math.ceil(selected.size / numTeams)
-    if (maxPerTeam > 7) {
-      setError(`Too many players for ${numTeams} teams — max 7 per team. Select fewer players or add more teams.`)
+      setError(`Select at least ${numTeams} players for ${numTeams} teams.`)
       return
     }
     setError(null)
@@ -92,7 +95,7 @@ export default function AdminNewWeek() {
       const weeks = await getWeeks()
       const weekNumber = weeks.length + 1
 
-      const week = await createWeek(weekNumber, date, numTeams)
+      const week = await createWeek(weekNumber, date, playersPerTeam)
       await setAttendees(week.id, [...selected])
       await saveTeams(week.id, teams)
       await updateWeekStatus(week.id, 'active')
@@ -132,25 +135,25 @@ export default function AdminNewWeek() {
             />
           </div>
           <div>
-            <label className="block text-xs font-bold uppercase tracking-widest opacity-50 mb-2">Number of Teams</label>
+            <label className="block text-xs font-bold uppercase tracking-widest opacity-50 mb-2">Players per Team</label>
             <div className="flex gap-2">
-              {[3, 5, 7].map((n) => (
+              {[2, 3, 4, 5].map((n) => (
                 <button
                   key={n}
-                  onClick={() => setNumTeams(n)}
+                  onClick={() => setPlayersPerTeam(n)}
                   className="flex-1 py-3 rounded-xl border text-sm font-medium transition-colors"
                   style={{
-                    backgroundColor: numTeams === n ? '#1B2F5E' : 'white',
-                    color: numTeams === n ? 'white' : '#1B2F5E',
+                    backgroundColor: playersPerTeam === n ? '#1B2F5E' : 'white',
+                    color: playersPerTeam === n ? 'white' : '#1B2F5E',
                     borderColor: '#1B2F5E',
                   }}
                 >
-                  {n} teams
+                  {n}v{n}
                 </button>
               ))}
             </div>
             <p className="text-xs opacity-40 mt-2">
-              Must be odd — one team sits out each game. Max 7 players per team.
+              Number of teams is calculated from attendance. Must be odd — one team sits out each game.
             </p>
           </div>
           <button
@@ -168,12 +171,9 @@ export default function AdminNewWeek() {
         <div className="space-y-4">
           <div className="text-sm opacity-50">
             <span>{selected.size} selected</span>
-            {selected.size >= numTeams && (
+            {selected.size >= 3 && (
               <span className="ml-2">
-                → ~{Math.floor(selected.size / numTeams)}–{Math.ceil(selected.size / numTeams)} per team
-                {Math.ceil(selected.size / numTeams) > 7 && (
-                  <span className="text-red-400 ml-1">(exceeds 7 max — add teams or drop players)</span>
-                )}
+                → {deriveNumTeams(selected.size, playersPerTeam)} teams of ~{playersPerTeam}
               </span>
             )}
           </div>
