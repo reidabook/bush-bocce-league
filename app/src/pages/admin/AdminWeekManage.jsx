@@ -15,9 +15,6 @@ export default function AdminWeekManage() {
   const [loading, setLoading] = useState(true)
   const [error, setError] = useState(null)
 
-  // Add game form state
-  const [teamAId, setTeamAId] = useState('')
-  const [teamBId, setTeamBId] = useState('')
   const [gameNotes, setGameNotes] = useState('')
   const [addingGame, setAddingGame] = useState(false)
 
@@ -34,16 +31,11 @@ export default function AdminWeekManage() {
 
   async function handleAddGame(e) {
     e.preventDefault()
-    if (!teamAId || !teamBId || teamAId === teamBId) {
-      setError('Select two different teams.')
-      return
-    }
+    if (teams.length < 2) return
     setAddingGame(true)
     setError(null)
     try {
-      await addGame(id, teamAId, teamBId, gameNotes.trim() || null)
-      setTeamAId('')
-      setTeamBId('')
+      await addGame(id, teams[0].id, teams[1].id, gameNotes.trim() || null)
       setGameNotes('')
       await reload()
     } catch (e) {
@@ -137,54 +129,21 @@ export default function AdminWeekManage() {
         <div>
           <h2 className="text-xs font-bold uppercase tracking-widest opacity-50 mb-2">Add Game</h2>
           <form onSubmit={handleAddGame} className="bg-white rounded-xl p-4 shadow-sm space-y-3">
-            <div className="grid grid-cols-2 gap-2">
-              <div>
-                <label className="text-xs opacity-50 mb-1 block">Team A</label>
-                <select
-                  value={teamAId}
-                  onChange={(e) => setTeamAId(e.target.value)}
-                  className="w-full px-3 py-2 rounded-lg border text-sm outline-none"
-                  style={{ borderColor: '#e5e7eb' }}
-                >
-                  <option value="">Select…</option>
-                  {teams.map((t) => (
-                    <option key={t.id} value={t.id}>{t.name}</option>
-                  ))}
-                </select>
-              </div>
-              <div>
-                <label className="text-xs opacity-50 mb-1 block">Team B</label>
-                <select
-                  value={teamBId}
-                  onChange={(e) => setTeamBId(e.target.value)}
-                  className="w-full px-3 py-2 rounded-lg border text-sm outline-none"
-                  style={{ borderColor: '#e5e7eb' }}
-                >
-                  <option value="">Select…</option>
-                  {teams.map((t) => (
-                    <option key={t.id} value={t.id}>{t.name}</option>
-                  ))}
-                </select>
-              </div>
-            </div>
-            <div>
-              <label className="text-xs opacity-50 mb-1 block">Notes (optional)</label>
-              <input
-                type="text"
-                value={gameNotes}
-                onChange={(e) => setGameNotes(e.target.value)}
-                placeholder="e.g. close game, rained out, etc."
-                className="w-full px-3 py-2 rounded-lg border text-sm outline-none"
-                style={{ borderColor: '#e5e7eb' }}
-              />
-            </div>
+            <input
+              type="text"
+              value={gameNotes}
+              onChange={(e) => setGameNotes(e.target.value)}
+              placeholder="Notes (optional)"
+              className="w-full px-3 py-2 rounded-lg border text-sm outline-none"
+              style={{ borderColor: '#e5e7eb' }}
+            />
             <button
               type="submit"
-              disabled={addingGame}
+              disabled={addingGame || teams.length < 2}
               className="w-full py-2 rounded-xl text-white text-sm font-medium disabled:opacity-40"
               style={{ backgroundColor: '#1B2F5E' }}
             >
-              {addingGame ? 'Adding…' : 'Add Game'}
+              {addingGame ? 'Adding…' : '+ Add Game'}
             </button>
           </form>
         </div>
