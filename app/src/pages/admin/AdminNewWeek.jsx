@@ -24,10 +24,7 @@ function teamSizeLabel(playerCount, numTeams) {
   const base = Math.floor(playerCount / numTeams)
   const extra = playerCount % numTeams
   if (extra === 0) return `${numTeams} teams of ${base}`
-  const sizes = [
-    ...Array(extra).fill(base + 1),
-    ...Array(numTeams - extra).fill(base),
-  ]
+  const sizes = [...Array(extra).fill(base + 1), ...Array(numTeams - extra).fill(base)]
   return `${numTeams} teams (${sizes.join('+')})`
 }
 
@@ -37,10 +34,7 @@ function buildTeams(players, numTeams) {
     name: `${TEAM_COLORS[i] || `Team ${i + 1}`} Team`,
     players: [],
   }))
-  // Distribute round-robin so sizes are as even as possible
-  shuffled.forEach((p, i) => {
-    teams[i % numTeams].players.push(p)
-  })
+  shuffled.forEach((p, i) => { teams[i % numTeams].players.push(p) })
   return teams
 }
 
@@ -52,21 +46,15 @@ export default function AdminNewWeek() {
   const [error, setError] = useState(null)
   const [saving, setSaving] = useState(false)
 
-  // Step 1
   const [date, setDate] = useState(new Date().toISOString().split('T')[0])
-  const [playersPerTeam, setPlayersPerTeam] = useState(2)
-
-  // Step 2
   const [selected, setSelected] = useState(new Set())
-
-  // Step 3
+  const [playersPerTeam, setPlayersPerTeam] = useState(2)
   const [teams, setTeams] = useState([])
 
   useEffect(() => {
-    Promise.all([getPlayers(), getWeeks()])
-      .then(([players, weeks]) => {
+    getPlayers()
+      .then((players) => {
         setAllPlayers(players)
-        // Pre-select everyone
         setSelected(new Set(players.map((p) => p.id)))
       })
       .catch((e) => setError(e.message))
@@ -81,31 +69,36 @@ export default function AdminNewWeek() {
     })
   }
 
-  function generateTeams() {
+  function makeTeams(ppt) {
     const attending = allPlayers.filter((p) => selected.has(p.id))
-    const numTeams = deriveNumTeams(attending.length, playersPerTeam)
-    setTeams(buildTeams(attending, numTeams))
+    const numTeams = deriveNumTeams(attending.length, ppt)
+    return buildTeams(attending, numTeams)
   }
 
-  function goToStep3() {
-    const numTeams = deriveNumTeams(selected.size, playersPerTeam)
-    if (selected.size < numTeams) {
-      setError(`Select at least ${numTeams} players for ${numTeams} teams.`)
+  function goToStep2() {
+    if (selected.size < 3) {
+      setError('Select at least 3 players.')
       return
     }
     setError(null)
-    generateTeams()
-    setStep(3)
+    // Pick a sensible default: 3 per team if 9+ players, otherwise 2
+    const defaultPpt = selected.size >= 9 ? 3 : 2
+    setPlayersPerTeam(defaultPpt)
+    setTeams(makeTeams(defaultPpt))
+    setStep(2)
+  }
+
+  function changePpt(ppt) {
+    setPlayersPerTeam(ppt)
+    setTeams(makeTeams(ppt))
   }
 
   async function handleSave() {
     setSaving(true)
     setError(null)
     try {
-      // Get current week count to assign a week number
       const weeks = await getWeeks()
       const weekNumber = weeks.length + 1
-
       const week = await createWeek(weekNumber, date, playersPerTeam)
       await setAttendees(week.id, [...selected])
       await saveTeams(week.id, teams)
@@ -119,20 +112,22 @@ export default function AdminNewWeek() {
 
   if (loading) return <Spinner />
 
+  const numTeams = deriveNumTeams(selected.size, playersPerTeam)
+
   return (
     <div className="space-y-5">
       <div>
         <div className="text-xs font-bold uppercase tracking-widest opacity-40 mb-1">
-          Step {step} of 3
+          Step {step} of 2
         </div>
         <h1 className="text-2xl font-bold" style={{ color: '#1B2F5E' }}>
-          {step === 1 ? 'New Session' : step === 2 ? "Who's Playing?" : 'Review Teams'}
+          {step === 1 ? "New Session" : 'Review Teams'}
         </h1>
       </div>
 
       {error && <p className="text-red-500 text-sm">{error}</p>}
 
-      {/* Step 1: Date + team size */}
+      {/* Step 1: Date + attendance */}
       {step === 1 && (
         <div className="space-y-4">
           <div>
@@ -145,14 +140,62 @@ export default function AdminNewWeek() {
               style={{ borderColor: '#e5e7eb' }}
             />
           </div>
+
           <div>
-            <label className="block text-xs font-bold uppercase tracking-widest opacity-50 mb-2">Players per Team</label>
+            <div className="flex items-center justify-between mb-2">
+              <label className="text-xs font-bold uppercase tracking-widest opacity-50">Who's Playing?</label>
+              <span className="text-xs opacity-40">{selected.size} selected</span>
+            </div>
+            <div className="bg-white rounded-xl shadow-sm overflow-hidden">
+              {allPlayers.map((p) => (
+                <button
+                  key={p.id}
+                  onClick={() => togglePlayer(p.id)}
+                  className="w-full flex items-center gap-3 px-4 py-3 border-b last:border-0 text-left"
+                >
+                  <div
+                    className="w-5 h-5 rounded border-2 flex items-center justify-center flex-shrink-0"
+                    style={{
+                      backgroundColor: selected.has(p.id) ? '#1B2F5E' : 'white',
+                      borderColor: selected.has(p.id) ? '#1B2F5E' : '#d1d5db',
+                    }}
+                  >
+                    {selected.has(p.id) && <span className="text-white text-xs">✓</span>}
+                  </div>
+                  <span className="text-sm font-medium">{p.name}</span>
+                </button>
+              ))}
+            </div>
+          </div>
+
+          <button
+            onClick={goToStep2}
+            disabled={selected.size < 3}
+            className="w-full py-3 rounded-xl text-white text-sm font-medium disabled:opacity-30"
+            style={{ backgroundColor: '#1B2F5E' }}
+          >
+            Generate Teams →
+          </button>
+        </div>
+      )}
+
+      {/* Step 2: Review teams */}
+      {step === 2 && (
+        <div className="space-y-4">
+          {/* Team size picker */}
+          <div>
+            <div className="flex items-center justify-between mb-2">
+              <label className="text-xs font-bold uppercase tracking-widest opacity-50">Players per Team</label>
+              <span className="text-xs opacity-40">
+                {teamSizeLabel(selected.size, deriveNumTeams(selected.size, playersPerTeam))}
+              </span>
+            </div>
             <div className="flex gap-2">
               {[2, 3, 4, 5].map((n) => (
                 <button
                   key={n}
-                  onClick={() => setPlayersPerTeam(n)}
-                  className="flex-1 py-3 rounded-xl border text-sm font-medium transition-colors"
+                  onClick={() => changePpt(n)}
+                  className="flex-1 py-2 rounded-xl border text-sm font-medium transition-colors"
                   style={{
                     backgroundColor: playersPerTeam === n ? '#1B2F5E' : 'white',
                     color: playersPerTeam === n ? 'white' : '#1B2F5E',
@@ -163,73 +206,9 @@ export default function AdminNewWeek() {
                 </button>
               ))}
             </div>
-            <p className="text-xs opacity-40 mt-2">
-              Number of teams is calculated from attendance. Must be odd — one team sits out each game.
-            </p>
           </div>
-          <button
-            onClick={() => setStep(2)}
-            className="w-full py-3 rounded-xl text-white text-sm font-medium"
-            style={{ backgroundColor: '#1B2F5E' }}
-          >
-            Next →
-          </button>
-        </div>
-      )}
 
-      {/* Step 2: Attendance */}
-      {step === 2 && (
-        <div className="space-y-4">
-          <div className="text-sm opacity-50">
-            <span>{selected.size} selected</span>
-            {selected.size >= 3 && (
-              <span className="ml-2">
-                → {teamSizeLabel(selected.size, deriveNumTeams(selected.size, playersPerTeam))}
-              </span>
-            )}
-          </div>
-          <div className="bg-white rounded-xl shadow-sm overflow-hidden">
-            {allPlayers.map((p) => (
-              <button
-                key={p.id}
-                onClick={() => togglePlayer(p.id)}
-                className="w-full flex items-center gap-3 px-4 py-3 border-b last:border-0 text-left"
-              >
-                <div
-                  className="w-5 h-5 rounded border-2 flex items-center justify-center flex-shrink-0"
-                  style={{
-                    backgroundColor: selected.has(p.id) ? '#1B2F5E' : 'white',
-                    borderColor: selected.has(p.id) ? '#1B2F5E' : '#d1d5db',
-                  }}
-                >
-                  {selected.has(p.id) && <span className="text-white text-xs">✓</span>}
-                </div>
-                <span className="text-sm font-medium">{p.name}</span>
-              </button>
-            ))}
-          </div>
-          <div className="flex gap-2">
-            <button
-              onClick={() => setStep(1)}
-              className="flex-1 py-3 rounded-xl border text-sm font-medium"
-              style={{ borderColor: '#1B2F5E', color: '#1B2F5E' }}
-            >
-              ← Back
-            </button>
-            <button
-              onClick={goToStep3}
-              className="flex-1 py-3 rounded-xl text-white text-sm font-medium"
-              style={{ backgroundColor: '#1B2F5E' }}
-            >
-              Generate Teams →
-            </button>
-          </div>
-        </div>
-      )}
-
-      {/* Step 3: Review teams */}
-      {step === 3 && (
-        <div className="space-y-4">
+          {/* Teams grid */}
           <div className="grid grid-cols-2 gap-2">
             {teams.map((team, i) => (
               <div key={i} className="bg-white rounded-xl p-3 shadow-sm">
@@ -242,16 +221,18 @@ export default function AdminNewWeek() {
               </div>
             ))}
           </div>
+
           <button
-            onClick={generateTeams}
+            onClick={() => setTeams(makeTeams(playersPerTeam))}
             className="w-full py-2 rounded-xl border text-sm font-medium"
             style={{ borderColor: '#1B2F5E', color: '#1B2F5E' }}
           >
             🔀 Re-shuffle
           </button>
+
           <div className="flex gap-2">
             <button
-              onClick={() => setStep(2)}
+              onClick={() => setStep(1)}
               className="flex-1 py-3 rounded-xl border text-sm font-medium"
               style={{ borderColor: '#1B2F5E', color: '#1B2F5E' }}
             >
