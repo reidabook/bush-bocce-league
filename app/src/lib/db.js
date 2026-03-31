@@ -162,6 +162,14 @@ export async function deleteGame(gameId) {
   if (error) throw error
 }
 
+export async function clearGameResult(gameId) {
+  const { error } = await supabase
+    .from('games')
+    .update({ winner_team_id: null })
+    .eq('id', gameId)
+  if (error) throw error
+}
+
 // ─── Departures ───────────────────────────────────────────────────────────────
 
 export async function getDepartures(weekId) {
@@ -172,6 +180,41 @@ export async function getDepartures(weekId) {
     .order('departed_at')
   if (error) throw error
   return data.map((d) => ({ id: d.id, player_id: d.player_id, name: d.players.name, departed_at: d.departed_at }))
+}
+
+// ─── Game Player Exclusions ───────────────────────────────────────────────────
+
+export async function getGamePlayerExclusions(weekId) {
+  const { data: gameRows, error: ge } = await supabase
+    .from('games')
+    .select('id')
+    .eq('week_id', weekId)
+  if (ge) throw ge
+  if (!gameRows.length) return []
+
+  const ids = gameRows.map((g) => g.id)
+  const { data, error } = await supabase
+    .from('game_player_exclusions')
+    .select('id, game_id, player_id')
+    .in('game_id', ids)
+  if (error) throw error
+  return data
+}
+
+export async function excludePlayerFromGame(gameId, playerId) {
+  const { error } = await supabase
+    .from('game_player_exclusions')
+    .upsert({ game_id: gameId, player_id: playerId })
+  if (error) throw error
+}
+
+export async function restorePlayerToGame(gameId, playerId) {
+  const { error } = await supabase
+    .from('game_player_exclusions')
+    .delete()
+    .eq('game_id', gameId)
+    .eq('player_id', playerId)
+  if (error) throw error
 }
 
 // ─── Standings ────────────────────────────────────────────────────────────────
@@ -212,6 +255,18 @@ export async function getStandings() {
     return t !== undefined && t < new Date(gameCreatedAt).getTime()
   }
 
+  // Fetch per-game exclusions for completed weeks
+  const completedGameIds = games.map((g) => g.id)
+  let exclusionSet = new Set()
+  if (completedGameIds.length > 0) {
+    const { data: excl, error: ee } = await supabase
+      .from('game_player_exclusions')
+      .select('game_id, player_id')
+      .in('game_id', completedGameIds)
+    if (ee) throw ee
+    exclusionSet = new Set(excl.map((e) => `${e.game_id}:${e.player_id}`))
+  }
+
   // Fetch attendance counts per player
   const { data: attendance, error: ae } = await supabase
     .from('week_attendees')
@@ -239,13 +294,21 @@ export async function getStandings() {
       : game.team_b.team_players.map((tp) => tp.player_id)
 
     allPlayers.forEach((pid) => {
-      if (stats[pid] && !departed(game.week_id, pid, game.created_at)) {
+      if (
+        stats[pid] &&
+        !departed(game.week_id, pid, game.created_at) &&
+        !exclusionSet.has(`${game.id}:${pid}`)
+      ) {
         stats[pid].gamesPlayed++
         stats[pid].points += 1  // 1pt for playing
       }
     })
     winners.forEach((pid) => {
-      if (stats[pid] && !departed(game.week_id, pid, game.created_at)) {
+      if (
+        stats[pid] &&
+        !departed(game.week_id, pid, game.created_at) &&
+        !exclusionSet.has(`${game.id}:${pid}`)
+      ) {
         stats[pid].wins++
         stats[pid].points += 3  // 3pts for winning (total: 4 for a win, 1 for a loss)
       }
