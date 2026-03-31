@@ -2,7 +2,8 @@ import { useEffect, useState } from 'react'
 import { useParams, useNavigate } from 'react-router-dom'
 import {
   getWeek, getTeamsForWeek, getGamesForWeek,
-  addGame, recordGameResult, deleteGame, updateWeekStatus
+  addGame, recordGameResult, deleteGame, updateWeekStatus,
+  getDepartures, logDeparture, removeDeparture,
 } from '../../lib/db'
 import Spinner from '../../components/Spinner'
 
@@ -12,6 +13,7 @@ export default function AdminWeekManage() {
   const [week, setWeek] = useState(null)
   const [teams, setTeams] = useState([])
   const [games, setGames] = useState([])
+  const [departures, setDepartures] = useState([])
   const [loading, setLoading] = useState(true)
   const [error, setError] = useState(null)
 
@@ -19,10 +21,11 @@ export default function AdminWeekManage() {
   const [addingGame, setAddingGame] = useState(false)
 
   async function reload() {
-    const [w, t, g] = await Promise.all([getWeek(id), getTeamsForWeek(id), getGamesForWeek(id)])
+    const [w, t, g, d] = await Promise.all([getWeek(id), getTeamsForWeek(id), getGamesForWeek(id), getDepartures(id)])
     setWeek(w)
     setTeams(t)
     setGames(g)
+    setDepartures(d)
   }
 
   useEffect(() => {
@@ -75,6 +78,24 @@ export default function AdminWeekManage() {
     }
   }
 
+  async function handleLogDeparture(playerId) {
+    try {
+      await logDeparture(id, playerId)
+      await reload()
+    } catch (e) {
+      setError(e.message)
+    }
+  }
+
+  async function handleRemoveDeparture(playerId) {
+    try {
+      await removeDeparture(id, playerId)
+      await reload()
+    } catch (e) {
+      setError(e.message)
+    }
+  }
+
   async function handleReopenWeek() {
     try {
       await updateWeekStatus(id, 'active')
@@ -111,17 +132,52 @@ export default function AdminWeekManage() {
       <div>
         <h2 className="text-xs font-bold uppercase tracking-widest opacity-50 mb-2">Teams</h2>
         <div className="grid grid-cols-2 gap-2">
-          {teams.map((team) => (
-            <div key={team.id} className="bg-white rounded-xl p-3 shadow-sm">
-              <div className="text-xs font-bold uppercase tracking-wide mb-1" style={{ color: '#89B4D0' }}>
-                {team.name}
+          {teams.map((team) => {
+            const departedIds = new Set(departures.map((d) => d.player_id))
+            return (
+              <div key={team.id} className="bg-white rounded-xl p-3 shadow-sm">
+                <div className="text-xs font-bold uppercase tracking-wide mb-1" style={{ color: '#89B4D0' }}>
+                  {team.name}
+                </div>
+                {team.players.map((p) => {
+                  const hasDeparted = departedIds.has(p.id)
+                  return (
+                    <div key={p.id} className="flex items-center justify-between py-0.5 gap-1">
+                      <span
+                        className="text-xs"
+                        style={{ opacity: hasDeparted ? 0.4 : 1, textDecoration: hasDeparted ? 'line-through' : 'none' }}
+                      >
+                        {p.name}
+                      </span>
+                      {week?.status !== 'completed' && (
+                        hasDeparted ? (
+                          <button
+                            onClick={() => handleRemoveDeparture(p.id)}
+                            className="text-xs opacity-30 hover:opacity-70 flex-shrink-0"
+                            title="Undo departure"
+                          >
+                            undo
+                          </button>
+                        ) : (
+                          <button
+                            onClick={() => handleLogDeparture(p.id)}
+                            className="text-xs opacity-30 hover:opacity-70 flex-shrink-0"
+                            title="Mark as left early"
+                          >
+                            left
+                          </button>
+                        )
+                      )}
+                    </div>
+                  )
+                })}
               </div>
-              {team.players.map((p) => (
-                <div key={p.id} className="text-xs py-0.5">{p.name}</div>
-              ))}
-            </div>
-          ))}
+            )
+          })}
         </div>
+        {departures.length > 0 && (
+          <p className="text-xs opacity-40 mt-1 px-1">Departed players won't earn points for games after they left.</p>
+        )}
       </div>
 
       {/* Add game */}
