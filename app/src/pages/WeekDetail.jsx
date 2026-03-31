@@ -1,6 +1,6 @@
 import { useEffect, useState } from 'react'
 import { useParams, Link } from 'react-router-dom'
-import { getWeek, getTeamsForWeek, getGamesForWeek } from '../lib/db'
+import { getWeek, getTeamsForWeek, getGamesForWeek, getDepartures } from '../lib/db'
 import Spinner from '../components/Spinner'
 import { isAdmin } from '../lib/auth'
 
@@ -13,9 +13,11 @@ export default function WeekDetail() {
   const [error, setError] = useState(null)
   const admin = isAdmin()
 
+  const [departures, setDepartures] = useState([])
+
   useEffect(() => {
-    Promise.all([getWeek(id), getTeamsForWeek(id), getGamesForWeek(id)])
-      .then(([w, t, g]) => { setWeek(w); setTeams(t); setGames(g) })
+    Promise.all([getWeek(id), getTeamsForWeek(id), getGamesForWeek(id), getDepartures(id)])
+      .then(([w, t, g, d]) => { setWeek(w); setTeams(t); setGames(g); setDepartures(d) })
       .catch((e) => setError(e.message))
       .finally(() => setLoading(false))
   }, [id])
@@ -26,6 +28,17 @@ export default function WeekDetail() {
 
   // Build a quick lookup: teamId → team object
   const teamMap = Object.fromEntries(teams.map((t) => [t.id, t]))
+
+  // Build departure lookup: playerId → { departed_at, leftAfterLabel }
+  const departureMap = {}
+  departures.forEach((d) => {
+    const depMs = new Date(d.departed_at).getTime()
+    const gamesBefore = games.filter((g) => new Date(g.created_at).getTime() < depMs)
+    const label = gamesBefore.length === 0
+      ? 'left before any games'
+      : `left after Game ${gamesBefore.length}`
+    departureMap[d.player_id] = label
+  })
 
   return (
     <div className="space-y-5">
@@ -60,9 +73,22 @@ export default function WeekDetail() {
                 <div className="text-xs font-bold uppercase tracking-wide mb-2" style={{ color: '#89B4D0' }}>
                   {team.name}
                 </div>
-                {team.players.map((p) => (
-                  <div key={p.id} className="text-sm font-medium py-0.5">{p.name}</div>
-                ))}
+                {team.players.map((p) => {
+                  const departureLabel = departureMap[p.id]
+                  return (
+                    <div key={p.id} className="py-0.5">
+                      <span
+                        className="text-sm font-medium"
+                        style={{ opacity: departureLabel ? 0.45 : 1, textDecoration: departureLabel ? 'line-through' : 'none' }}
+                      >
+                        {p.name}
+                      </span>
+                      {departureLabel && (
+                        <span className="ml-1 text-xs opacity-40 italic">{departureLabel}</span>
+                      )}
+                    </div>
+                  )
+                })}
               </div>
             ))}
           </div>
