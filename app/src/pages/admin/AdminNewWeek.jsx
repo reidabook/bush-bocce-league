@@ -20,6 +20,17 @@ function deriveNumTeams(playerCount, playersPerTeam) {
   return n % 2 === 0 ? n + 1 : n  // must be odd
 }
 
+function teamSizeLabel(playerCount, numTeams) {
+  const base = Math.floor(playerCount / numTeams)
+  const extra = playerCount % numTeams
+  if (extra === 0) return `${numTeams} teams of ${base}`
+  const sizes = [
+    ...Array(extra).fill(base + 1),
+    ...Array(numTeams - extra).fill(base),
+  ]
+  return `${numTeams} teams (${sizes.join('+')})`
+}
+
 function buildTeams(players, numTeams) {
   const shuffled = shuffle(players)
   const teams = Array.from({ length: numTeams }, (_, i) => ({
@@ -173,7 +184,7 @@ export default function AdminNewWeek() {
             <span>{selected.size} selected</span>
             {selected.size >= 3 && (
               <span className="ml-2">
-                → {deriveNumTeams(selected.size, playersPerTeam)} teams of ~{playersPerTeam}
+                → {teamSizeLabel(selected.size, deriveNumTeams(selected.size, playersPerTeam))}
               </span>
             )}
           </div>
