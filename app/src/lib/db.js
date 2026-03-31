@@ -182,6 +182,22 @@ export async function getDepartures(weekId) {
   return data.map((d) => ({ id: d.id, player_id: d.player_id, name: d.players.name, departed_at: d.departed_at }))
 }
 
+export async function logDeparture(weekId, playerId) {
+  const { error } = await supabase
+    .from('player_departures')
+    .upsert({ week_id: weekId, player_id: playerId, departed_at: new Date().toISOString() })
+  if (error) throw error
+}
+
+export async function removeDeparture(weekId, playerId) {
+  const { error } = await supabase
+    .from('player_departures')
+    .delete()
+    .eq('week_id', weekId)
+    .eq('player_id', playerId)
+  if (error) throw error
+}
+
 // ─── Game Player Exclusions ───────────────────────────────────────────────────
 
 export async function getGamePlayerExclusions(weekId) {
