@@ -10,6 +10,7 @@ A lightweight web app for managing a neighborhood bocce league. Tracks weekly ga
 
 ### Public (anyone with the link)
 - **Standings** — live leaderboard with points, wins, games played, sessions attended
+- **Active Session** — live view of tonight's teams, per-player session points, and game results
 - **Weeks** — per-session history: teams, games, results
 - **Tournament** — single-elimination bracket, seeded from standings
 - **Rules** — scoring system and league vibe
@@ -18,6 +19,7 @@ A lightweight web app for managing a neighborhood bocce league. Tracks weekly ga
 - **Roster** — add/deactivate players
 - **New Session** — 3-step flow: set date + number of teams → pick attendance → generate/reshuffle random teams
 - **Manage Week** — add games, record results (or clear them), close/reopen the week
+- **Active Session** — mark game winners and remove individual players from specific games inline
 - **AI Assistant** — conversational agent for logging games and results from your phone
 - **Tournament** — seed and run the bracket
 
@@ -69,6 +71,13 @@ CREATE TABLE player_departures (
   player_id uuid REFERENCES players(id) ON DELETE CASCADE NOT NULL,
   departed_at timestamptz DEFAULT now() NOT NULL,
   UNIQUE(week_id, player_id)
+);
+
+CREATE TABLE game_player_exclusions (
+  id uuid PRIMARY KEY DEFAULT gen_random_uuid(),
+  game_id uuid REFERENCES games(id) ON DELETE CASCADE NOT NULL,
+  player_id uuid REFERENCES players(id) ON DELETE CASCADE NOT NULL,
+  UNIQUE(game_id, player_id)
 );
 ```
 
@@ -163,6 +172,7 @@ bocce/
         │   └── Spinner.jsx
         └── pages/
             ├── Home.jsx            # Standings
+            ├── ActiveSession.jsx   # Live session view + admin game controls
             ├── WeekList.jsx
             ├── WeekDetail.jsx
             ├── Tournament.jsx
