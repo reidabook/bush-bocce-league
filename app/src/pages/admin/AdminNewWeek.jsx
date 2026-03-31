@@ -12,29 +12,10 @@ function shuffle(arr) {
   return a
 }
 
-const TEAM_COLORS = ['Red', 'Green', 'Blue', 'Yellow', 'Orange', 'Purple', 'Black']
-
-function deriveNumTeams(playerCount, playersPerTeam) {
-  const raw = Math.round(playerCount / playersPerTeam)
-  const n = raw < 3 ? 3 : raw
-  return n % 2 === 0 ? n + 1 : n  // must be odd
-}
-
-function teamSizeLabel(playerCount, numTeams) {
-  const base = Math.floor(playerCount / numTeams)
-  const extra = playerCount % numTeams
-  if (extra === 0) return `${numTeams} teams of ${base}`
-  const sizes = [...Array(extra).fill(base + 1), ...Array(numTeams - extra).fill(base)]
-  return `${numTeams} teams (${sizes.join('+')})`
-}
-
-function buildTeams(players, numTeams) {
+function buildTeams(players) {
   const shuffled = shuffle(players)
-  const teams = Array.from({ length: numTeams }, (_, i) => ({
-    name: `${TEAM_COLORS[i] || `Team ${i + 1}`} Team`,
-    players: [],
-  }))
-  shuffled.forEach((p, i) => { teams[i % numTeams].players.push(p) })
+  const teams = [{ name: 'Red Team', players: [] }, { name: 'Blue Team', players: [] }]
+  shuffled.forEach((p, i) => { teams[i % 2].players.push(p) })
   return teams
 }
 
@@ -48,7 +29,6 @@ export default function AdminNewWeek() {
 
   const [date, setDate] = useState(new Date().toISOString().split('T')[0])
   const [selected, setSelected] = useState(new Set())
-  const [playersPerTeam, setPlayersPerTeam] = useState(2)
   const [teams, setTeams] = useState([])
 
   useEffect(() => {
@@ -69,28 +49,19 @@ export default function AdminNewWeek() {
     })
   }
 
-  function makeTeams(ppt) {
+  function makeTeams() {
     const attending = allPlayers.filter((p) => selected.has(p.id))
-    const numTeams = deriveNumTeams(attending.length, ppt)
-    return buildTeams(attending, numTeams)
+    return buildTeams(attending)
   }
 
   function goToStep2() {
-    if (selected.size < 3) {
-      setError('Select at least 3 players.')
+    if (selected.size < 2) {
+      setError('Select at least 2 players.')
       return
     }
     setError(null)
-    // Pick a sensible default: 3 per team if 9+ players, otherwise 2
-    const defaultPpt = selected.size >= 9 ? 3 : 2
-    setPlayersPerTeam(defaultPpt)
-    setTeams(makeTeams(defaultPpt))
+    setTeams(makeTeams())
     setStep(2)
-  }
-
-  function changePpt(ppt) {
-    setPlayersPerTeam(ppt)
-    setTeams(makeTeams(ppt))
   }
 
   async function handleSave() {
@@ -99,7 +70,7 @@ export default function AdminNewWeek() {
     try {
       const weeks = await getWeeks()
       const weekNumber = weeks.length + 1
-      const week = await createWeek(weekNumber, date, playersPerTeam)
+      const week = await createWeek(weekNumber, date, 2)
       await setAttendees(week.id, [...selected])
       await saveTeams(week.id, teams)
       await updateWeekStatus(week.id, 'active')
@@ -111,8 +82,6 @@ export default function AdminNewWeek() {
   }
 
   if (loading) return <Spinner />
-
-  const numTeams = deriveNumTeams(selected.size, playersPerTeam)
 
   return (
     <div className="space-y-5">
@@ -182,31 +151,7 @@ export default function AdminNewWeek() {
       {/* Step 2: Review teams */}
       {step === 2 && (
         <div className="space-y-4">
-          {/* Team size picker */}
-          <div>
-            <div className="flex items-center justify-between mb-2">
-              <label className="text-xs font-bold uppercase tracking-widest opacity-50">Players per Team</label>
-              <span className="text-xs opacity-40">
-                {teamSizeLabel(selected.size, deriveNumTeams(selected.size, playersPerTeam))}
-              </span>
-            </div>
-            <div className="flex gap-2">
-              {[2, 3, 4, 5].map((n) => (
-                <button
-                  key={n}
-                  onClick={() => changePpt(n)}
-                  className="flex-1 py-2 rounded-xl border text-sm font-medium transition-colors"
-                  style={{
-                    backgroundColor: playersPerTeam === n ? '#1B2F5E' : 'white',
-                    color: playersPerTeam === n ? 'white' : '#1B2F5E',
-                    borderColor: '#1B2F5E',
-                  }}
-                >
-                  {n}v{n}
-                </button>
-              ))}
-            </div>
-          </div>
+          <div className="text-xs opacity-40">{selected.size} players · 2 teams</div>
 
           {/* Teams grid */}
           <div className="grid grid-cols-2 gap-2">
@@ -223,7 +168,7 @@ export default function AdminNewWeek() {
           </div>
 
           <button
-            onClick={() => setTeams(makeTeams(playersPerTeam))}
+            onClick={() => setTeams(makeTeams())}
             className="w-full py-2 rounded-xl border text-sm font-medium"
             style={{ borderColor: '#1B2F5E', color: '#1B2F5E' }}
           >
