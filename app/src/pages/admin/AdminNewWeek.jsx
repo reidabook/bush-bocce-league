@@ -54,6 +54,16 @@ export default function AdminNewWeek() {
     return buildTeams(attending)
   }
 
+  function swapPlayer(player, fromTeamIndex) {
+    const toTeamIndex = fromTeamIndex === 0 ? 1 : 0
+    setTeams((prev) => {
+      const next = prev.map((t) => ({ ...t, players: [...t.players] }))
+      next[fromTeamIndex].players = next[fromTeamIndex].players.filter((p) => p.id !== player.id)
+      next[toTeamIndex].players.push(player)
+      return next
+    })
+  }
+
   function goToStep2() {
     if (selected.size < 2) {
       setError('Select at least 2 players.')
@@ -161,7 +171,14 @@ export default function AdminNewWeek() {
                   {team.name}
                 </div>
                 {team.players.map((p) => (
-                  <div key={p.id} className="text-sm py-0.5 font-medium">{p.name}</div>
+                  <div key={p.id} className="flex items-center justify-between py-0.5">
+                    <span className="text-sm font-medium">{p.name}</span>
+                    <button
+                      onClick={() => swapPlayer(p, i)}
+                      className="text-xs opacity-30 hover:opacity-80 ml-2 flex-shrink-0"
+                      title="Move to other team"
+                    >↔</button>
+                  </div>
                 ))}
               </div>
             ))}
