@@ -1,4 +1,12 @@
-import { createClient } from '@supabase/supabase-js'
+import {
+  getGamesForWeek,
+  addGame,
+  recordGameResult,
+  deleteGame,
+  getPlayers,
+  saveTeams,
+  logDeparture,
+} from './_db.js'
 
 const TEAM_COLORS = ['Red', 'Green', 'Blue', 'Yellow', 'Orange', 'Purple', 'Black']
 
@@ -108,11 +116,6 @@ export default async function handler(req, res) {
     return res.status(500).json({ reply: 'GEMINI_API_KEY is not configured.', actionsRan: 0 })
   }
 
-  const supabase = createClient(
-    process.env.VITE_SUPABASE_URL,
-    process.env.VITE_SUPABASE_ANON_KEY
-  )
-
   const systemPrompt = buildSystemPrompt(weekContext)
 
   // Build Gemini contents from conversation history
@@ -175,7 +178,7 @@ export default async function handler(req, res) {
       contents.push({ role: 'model', parts: [{ functionCall: { name, args } }] })
 
       // Execute the tool server-side
-      const result = await executeTool(name, args, weekContext, supabase)
+      const result = await executeTool(name, args, weekContext)
       if (result.success) actionsRan++
 
       // Append the tool result so Gemini can incorporate it
@@ -197,17 +200,13 @@ export default async function handler(req, res) {
 
 // ─── Tool execution ───────────────────────────────────────────────────────────
 
-async function executeTool(name, args, ctx, supabase) {
+async function executeTool(name, args, ctx) {
   const { week, teams } = ctx ?? {}
   if (!week) return { error: 'No active session context.' }
 
   // Always fetch fresh games to avoid stale state across agentic loop turns
   // (ctx.games is a snapshot from the original request; add_game adds to DB but not ctx)
-  const { data: games = [] } = await supabase
-    .from('games')
-    .select('*')
-    .eq('week_id', week.id)
-    .order('created_at', { ascending: true })
+  const games = await getGamesForWeek(week.id)
 
   const teamByName = Object.fromEntries(teams.map((t) => [t.name.toLowerCase(), t]))
 
@@ -238,10 +237,7 @@ async function executeTool(name, args, ctx, supabase) {
       const tB = findTeam(args.team_b)
       if (!tA) return { error: `Team not found: "${args.team_a}". Valid teams: ${teams.map(t => t.name).join(', ')}` }
       if (!tB) return { error: `Team not found: "${args.team_b}". Valid teams: ${teams.map(t => t.name).join(', ')}` }
-      const { error } = await supabase
-        .from('games')
-        .insert({ week_id: week.id, team_a_id: tA.id, team_b_id: tB.id, notes: args.notes ?? null })
-      if (error) return { error: error.message }
+      await addGame(week.id, tA.id, tB.id, args.notes ?? null)
       return { success: true, message: `Game logged: ${tA.name} vs ${tB.name}` }
 
     } else if (name === 'record_result') {
@@ -249,18 +245,13 @@ async function executeTool(name, args, ctx, supabase) {
       if (!game) return { error: `No game found between "${args.team_a}" and "${args.team_b}". Use add_game first.` }
       const winner = findTeam(args.winner)
       if (!winner) return { error: `Winner team not found: "${args.winner}"` }
-      const { error } = await supabase
-        .from('games')
-        .update({ winner_team_id: winner.id })
-        .eq('id', game.id)
-      if (error) return { error: error.message }
+      await recordGameResult(game.id, winner.id)
       return { success: true, message: `Result recorded: ${winner.name} won.` }
 
     } else if (name === 'delete_game') {
       const game = findGame(args.team_a, args.team_b)
       if (!game) return { error: `No game found between "${args.team_a}" and "${args.team_b}"` }
-      const { error } = await supabase.from('games').delete().eq('id', game.id)
-      if (error) return { error: error.message }
+      await deleteGame(game.id)
       return { success: true, message: 'Game deleted.' }
 
     } else if (name === 'generate_teams') {
@@ -271,11 +262,7 @@ async function executeTool(name, args, ctx, supabase) {
       if (![3, 5, 7].includes(numTeams)) {
         return { error: 'Number of teams must be 3, 5, or 7 (must be odd so one team sits out each game).' }
       }
-      // Fetch all active players to resolve names → IDs
-      const { data: allPlayers, error: pe } = await supabase
-        .from('players').select('id, name').eq('active', true)
-      if (pe) return { error: pe.message }
-
+      const allPlayers = await getPlayers()
       const playerByName = Object.fromEntries(allPlayers.map((p) => [p.name.toLowerCase(), p]))
       const matched = []
       const unmatched = []
@@ -296,20 +283,7 @@ async function executeTool(name, args, ctx, supabase) {
         players: [],
       }))
       shuffled.forEach((p, i) => newTeams[i % numTeams].players.push(p))
-
-      // Replace existing teams
-      await supabase.from('teams').delete().eq('week_id', week.id)
-      for (const team of newTeams) {
-        const { data: saved, error: te } = await supabase
-          .from('teams').insert({ week_id: week.id, name: team.name }).select().single()
-        if (te) return { error: te.message }
-        if (team.players.length > 0) {
-          const { error: me } = await supabase.from('team_players').insert(
-            team.players.map((p) => ({ team_id: saved.id, player_id: p.id }))
-          )
-          if (me) return { error: me.message }
-        }
-      }
+      await saveTeams(week.id, newTeams)
       return {
         success: true,
         teams: newTeams.map((t) => ({ name: t.name, players: t.players.map((p) => p.name) })),
@@ -325,11 +299,7 @@ async function executeTool(name, args, ctx, supabase) {
       if (!foundPlayer) {
         return { error: `Player "${args.player_name}" not found on any team this session.` }
       }
-      const { error } = await supabase.from('player_departures').upsert(
-        { week_id: week.id, player_id: foundPlayer.id, departed_at: new Date().toISOString() },
-        { onConflict: 'week_id,player_id' }
-      )
-      if (error) return { error: error.message }
+      await logDeparture(week.id, foundPlayer.id)
       return { success: true, message: `${foundPlayer.name} marked as departed. They won't get credit for games played after this point.` }
     }
 
