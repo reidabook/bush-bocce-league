@@ -20,7 +20,13 @@ export default function Home() {
   }, [])
 
   if (loading) return <Spinner />
-  if (error) return <p className="text-red-600 text-sm">{error}</p>
+  if (error) return (
+    <div className="rounded-xl border border-red-200 bg-red-50 p-4 space-y-2">
+      <p className="font-semibold text-red-700 text-sm">Failed to load data</p>
+      <p className="text-red-600 text-xs font-mono break-all">{error}</p>
+      <p className="text-red-500 text-xs">Visit <a href="/api/debug" className="underline" target="_blank">/api/debug</a> for connection details.</p>
+    </div>
+  )
 
   return (
     <div className="space-y-5">

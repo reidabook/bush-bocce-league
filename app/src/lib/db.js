@@ -1,13 +1,23 @@
 // Thin HTTP client — all DB calls go through /api/sheets (server-side Google Sheets layer)
 
 async function call(action, params = {}) {
-  const res = await fetch('/api/sheets', {
-    method: 'POST',
-    headers: { 'Content-Type': 'application/json' },
-    body: JSON.stringify({ action, ...params }),
-  })
-  const json = await res.json()
-  if (!res.ok) throw new Error(json.error ?? 'API error')
+  let res
+  try {
+    res = await fetch('/api/sheets', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ action, ...params }),
+    })
+  } catch (networkErr) {
+    throw new Error(`Network error calling ${action}: ${networkErr.message}. Check /api/debug for connection status.`)
+  }
+  let json
+  try {
+    json = await res.json()
+  } catch {
+    throw new Error(`Server returned non-JSON response (status ${res.status}) for action "${action}". The API function may have timed out or crashed.`)
+  }
+  if (!res.ok) throw new Error(json.error ?? `API error (status ${res.status}) for action "${action}"`)
   return json.result
 }
 
