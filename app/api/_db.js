@@ -309,7 +309,7 @@ export async function restorePlayerToGame(gameId, playerId) {
 // ─── Standings ────────────────────────────────────────────────────────────────
 
 export async function getStandings() {
-  const [playerRows, weekRows, gameRows, tpRows, depRows, exclRows, attendeeRows] =
+  const [playerRows, weekRows, gameRows, tpRows, depRows, exclRows, attendeeRows, histRows] =
     await Promise.all([
       getRows('players'),
       getRows('weeks'),
@@ -318,12 +318,17 @@ export async function getStandings() {
       getRows('player_departures'),
       getRows('game_player_exclusions'),
       getRows('week_attendees'),
+      getRows('historical_player_stats'),
     ])
 
   const players = playerRows.map(toObj).filter((p) => p.active?.toLowerCase() === 'true')
 
+  const allWeeks = weekRows.map(toObj)
   const completedWeekIds = new Set(
-    weekRows.map(toObj).filter((w) => w.status === 'completed').map((w) => w.id)
+    allWeeks.filter((w) => w.status === 'completed').map((w) => w.id)
+  )
+  const historicalWeekIds = new Set(
+    allWeeks.filter((w) => w.status === 'historical').map((w) => w.id)
   )
 
   const completedGames = gameRows
@@ -358,7 +363,7 @@ export async function getStandings() {
 
   const sessionCount = {}
   attendeeRows.map(toObj).forEach((a) => {
-    if (completedWeekIds.has(a.week_id)) {
+    if (completedWeekIds.has(a.week_id) || historicalWeekIds.has(a.week_id)) {
       sessionCount[a.player_id] = (sessionCount[a.player_id] || 0) + 1
     }
   })
@@ -378,6 +383,14 @@ export async function getStandings() {
       gamesPlayed: 0,
       sessions: sessionCount[p.id] || 0,
     }
+  })
+
+  // Merge pre-computed stats for historical weeks
+  histRows.map(toObj).forEach((h) => {
+    if (!stats[h.player_id]) return
+    stats[h.player_id].points += parseInt(h.points) || 0
+    stats[h.player_id].wins += parseInt(h.wins) || 0
+    stats[h.player_id].gamesPlayed += parseInt(h.games_played) || 0
   })
 
   completedGames.forEach((game) => {
