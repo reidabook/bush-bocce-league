@@ -31,9 +31,11 @@ async function getRows(sheetName) {
 }
 
 function toObj(row) {
-  return Object.fromEntries(
-    Object.entries(row.toObject()).map(([k, v]) => [k, v ?? ''])
-  )
+  const obj = {}
+  for (const key of row._worksheet.headerValues) {
+    obj[key] = row.get(key) ?? ''
+  }
+  return obj
 }
 
 // ─── Players ──────────────────────────────────────────────────────────────────
