@@ -10,8 +10,9 @@ const SHEETS = [
   { title: 'games',                 headers: ['id', 'week_id', 'team_a_id', 'team_b_id', 'winner_team_id', 'notes', 'created_at'] },
   { title: 'player_departures',     headers: ['id', 'week_id', 'player_id', 'departed_at'] },
   { title: 'game_player_exclusions',headers: ['id', 'game_id', 'player_id'] },
-  { title: 'tournament',            headers: ['id', 'status', 'format', 'created_at'] },
-  { title: 'tournament_matches',    headers: ['id', 'tournament_id', 'round', 'position', 'player_a_id', 'player_b_id', 'winner_id', 'is_bye'] },
+  { title: 'tournament',              headers: ['id', 'status', 'format', 'created_at'] },
+  { title: 'tournament_matches',      headers: ['id', 'tournament_id', 'round', 'position', 'player_a_id', 'player_b_id', 'winner_id', 'is_bye'] },
+  { title: 'historical_player_stats', headers: ['id', 'week_id', 'player_id', 'points', 'wins', 'games_played'] },
 ]
 
 export default async function handler(req, res) {
