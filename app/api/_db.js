@@ -32,7 +32,7 @@ async function getRows(sheetName) {
 
 function toObj(row) {
   const obj = {}
-  for (const key of row._sheet.headerValues) {
+  for (const key of row._worksheet.headerValues) {
     obj[key] = row.get(key) ?? ''
   }
   return obj
