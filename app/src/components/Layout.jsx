@@ -46,14 +46,14 @@ export default function Layout({ children }) {
           </div>
 
           {/* Nav tabs */}
-          <nav className="flex gap-1">
+          <nav className="flex gap-1 overflow-x-auto">
             {nav.map(({ to, label }) => {
               const active = location.pathname === to
               return (
                 <Link
                   key={to}
                   to={to}
-                  className="px-4 py-2 text-sm font-medium rounded-t-md transition-colors"
+                  className="px-3 py-2 text-sm font-medium rounded-t-md transition-colors whitespace-nowrap shrink-0"
                   style={{
                     backgroundColor: active ? '#F5F3EF' : 'transparent',
                     color: active ? '#1B2F5E' : '#89B4D0',
