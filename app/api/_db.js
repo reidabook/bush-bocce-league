@@ -44,7 +44,7 @@ export async function getPlayers() {
   const r = await getRows('players')
   return r
     .map(toObj)
-    .filter((p) => p.active === 'true')
+    .filter((p) => p.active?.toLowerCase() === 'true')
     .sort((a, b) => a.name.localeCompare(b.name))
 }
 
@@ -320,7 +320,7 @@ export async function getStandings() {
       getRows('week_attendees'),
     ])
 
-  const players = playerRows.map(toObj).filter((p) => p.active === 'true')
+  const players = playerRows.map(toObj).filter((p) => p.active?.toLowerCase() === 'true')
 
   const completedWeekIds = new Set(
     weekRows.map(toObj).filter((w) => w.status === 'completed').map((w) => w.id)
