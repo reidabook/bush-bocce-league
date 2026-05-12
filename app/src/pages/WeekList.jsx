@@ -13,6 +13,8 @@ export default function WeekList() {
   const [weeks, setWeeks] = useState([])
   const [loading, setLoading] = useState(true)
   const [error, setError] = useState(null)
+  const [initializing, setInitializing] = useState(false)
+  const [initResult, setInitResult] = useState(null)
 
   useEffect(() => {
     getWeeks()
@@ -21,11 +23,42 @@ export default function WeekList() {
       .finally(() => setLoading(false))
   }, [])
 
+  async function handleInit() {
+    setInitializing(true)
+    setInitResult(null)
+    try {
+      const res = await fetch('/api/init-sheets')
+      const data = await res.json()
+      const created = data.sheets?.filter((s) => s.action === 'created').length ?? 0
+      setInitResult({ ok: true, message: `Done! Created ${created} sheet(s). Reloading…` })
+      setTimeout(() => window.location.reload(), 1200)
+    } catch (err) {
+      setInitResult({ ok: false, message: err.message })
+      setInitializing(false)
+    }
+  }
+
   if (loading) return <Spinner />
   if (error) return (
     <div className="rounded-xl border border-red-200 bg-red-50 p-4 space-y-2">
       <p className="font-semibold text-red-700 text-sm">Failed to load sessions</p>
       <p className="text-red-600 text-xs font-mono break-all">{error}</p>
+      {error.includes('not found') && (
+        <div className="pt-1 space-y-1">
+          <button
+            onClick={handleInit}
+            disabled={initializing}
+            className="text-xs bg-red-700 text-white px-3 py-1.5 rounded-lg disabled:opacity-50"
+          >
+            {initializing ? 'Initializing…' : 'Initialize database'}
+          </button>
+          {initResult && (
+            <p className={`text-xs ${initResult.ok ? 'text-green-700' : 'text-red-600'}`}>
+              {initResult.message}
+            </p>
+          )}
+        </div>
+      )}
       <p className="text-red-500 text-xs">Visit <a href="/api/debug" className="underline" target="_blank">/api/debug</a> for connection details.</p>
     </div>
   )
