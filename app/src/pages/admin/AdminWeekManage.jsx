@@ -19,6 +19,7 @@ export default function AdminWeekManage() {
 
   const [gameNotes, setGameNotes] = useState('')
   const [addingGame, setAddingGame] = useState(false)
+  const [selectedTeams, setSelectedTeams] = useState([])
 
   async function reload() {
     const [w, t, g, d] = await Promise.all([getWeek(id), getTeamsForWeek(id), getGamesForWeek(id), getDepartures(id)])
@@ -35,11 +36,16 @@ export default function AdminWeekManage() {
   async function handleAddGame(e) {
     e.preventDefault()
     if (teams.length < 2) return
+    const [aId, bId] = teams.length === 2
+      ? [teams[0].id, teams[1].id]
+      : selectedTeams
+    if (!aId || !bId) return
     setAddingGame(true)
     setError(null)
     try {
-      await addGame(id, teams[0].id, teams[1].id, gameNotes.trim() || null)
+      await addGame(id, aId, bId, gameNotes.trim() || null)
       setGameNotes('')
+      setSelectedTeams([])
       await reload()
     } catch (e) {
       setError(e.message)
@@ -131,7 +137,7 @@ export default function AdminWeekManage() {
       {/* Teams */}
       <div>
         <h2 className="text-xs font-bold uppercase tracking-widest opacity-50 mb-2">Teams</h2>
-        <div className="grid grid-cols-2 gap-2">
+        <div className={`grid gap-2 ${teams.length === 2 ? 'grid-cols-2' : 'grid-cols-1'}`}>
           {teams.map((team) => {
             const departedIds = new Set(departures.map((d) => d.player_id))
             return (
@@ -185,6 +191,37 @@ export default function AdminWeekManage() {
         <div>
           <h2 className="text-xs font-bold uppercase tracking-widest opacity-50 mb-2">Add Game</h2>
           <form onSubmit={handleAddGame} className="bg-white rounded-xl p-4 shadow-sm space-y-3">
+            {teams.length > 2 && (
+              <div>
+                <div className="text-xs opacity-50 mb-2 font-medium">Which two teams are playing?</div>
+                <div className="flex flex-wrap gap-2">
+                  {teams.map((team) => {
+                    const isSelected = selectedTeams.includes(team.id)
+                    const isFull = selectedTeams.length === 2 && !isSelected
+                    return (
+                      <button
+                        key={team.id}
+                        type="button"
+                        onClick={() => {
+                          if (isSelected) {
+                            setSelectedTeams((prev) => prev.filter((tid) => tid !== team.id))
+                          } else if (!isFull) {
+                            setSelectedTeams((prev) => [...prev, team.id])
+                          }
+                        }}
+                        className="px-3 py-1.5 rounded-lg text-sm font-medium"
+                        style={{
+                          backgroundColor: isSelected ? '#1B2F5E' : '#f3f4f6',
+                          color: isSelected ? 'white' : isFull ? '#d1d5db' : '#374151',
+                        }}
+                      >
+                        {team.name}
+                      </button>
+                    )
+                  })}
+                </div>
+              </div>
+            )}
             <input
               type="text"
               value={gameNotes}
@@ -195,7 +232,7 @@ export default function AdminWeekManage() {
             />
             <button
               type="submit"
-              disabled={addingGame || teams.length < 2}
+              disabled={addingGame || teams.length < 2 || (teams.length > 2 && selectedTeams.length !== 2)}
               className="w-full py-2 rounded-xl text-white text-sm font-medium disabled:opacity-40"
               style={{ backgroundColor: '#1B2F5E' }}
             >
