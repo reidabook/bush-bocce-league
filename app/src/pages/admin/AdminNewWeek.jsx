@@ -19,6 +19,9 @@ function buildTeams(players) {
   return teams
 }
 
+const TEAM_NAMES = ['Red Team', 'Blue Team']
+const TEAM_COLORS = ['#ef4444', '#3b82f6']
+
 export default function AdminNewWeek() {
   const navigate = useNavigate()
   const [step, setStep] = useState(1)
@@ -29,7 +32,9 @@ export default function AdminNewWeek() {
 
   const [date, setDate] = useState(new Date().toISOString().split('T')[0])
   const [selected, setSelected] = useState(new Set())
+  const [mode, setMode] = useState('auto') // 'auto' | 'manual'
   const [teams, setTeams] = useState([])
+  const [manualAssign, setManualAssign] = useState({}) // playerId -> 0 (Red) | 1 (Blue)
 
   useEffect(() => {
     getPlayers()
@@ -41,17 +46,15 @@ export default function AdminNewWeek() {
       .finally(() => setLoading(false))
   }, [])
 
+  const attending = allPlayers.filter((p) => selected.has(p.id))
+  const unassignedCount = attending.filter((p) => manualAssign[p.id] === undefined).length
+
   function togglePlayer(id) {
     setSelected((prev) => {
       const next = new Set(prev)
       next.has(id) ? next.delete(id) : next.add(id)
       return next
     })
-  }
-
-  function makeTeams() {
-    const attending = allPlayers.filter((p) => selected.has(p.id))
-    return buildTeams(attending)
   }
 
   function swapPlayer(player, fromTeamIndex) {
@@ -70,11 +73,39 @@ export default function AdminNewWeek() {
       return
     }
     setError(null)
-    setTeams(makeTeams())
+    if (mode === 'auto') {
+      setTeams(buildTeams(attending))
+    } else {
+      setManualAssign({})
+    }
     setStep(2)
   }
 
+  function assignManual(playerId, teamIndex) {
+    setManualAssign((prev) => {
+      if (prev[playerId] === teamIndex) {
+        const next = { ...prev }
+        delete next[playerId]
+        return next
+      }
+      return { ...prev, [playerId]: teamIndex }
+    })
+  }
+
   async function handleSave() {
+    let finalTeams
+    if (mode === 'manual') {
+      const unassigned = attending.filter((p) => manualAssign[p.id] === undefined)
+      if (unassigned.length > 0) {
+        setError(`Unassigned: ${unassigned.map((p) => p.name).join(', ')}`)
+        return
+      }
+      finalTeams = [{ name: 'Red Team', players: [] }, { name: 'Blue Team', players: [] }]
+      for (const p of attending) finalTeams[manualAssign[p.id]].players.push(p)
+    } else {
+      finalTeams = teams
+    }
+
     setSaving(true)
     setError(null)
     try {
@@ -82,7 +113,7 @@ export default function AdminNewWeek() {
       const weekNumber = weeks.length + 1
       const week = await createWeek(weekNumber, date, 2)
       await setAttendees(week.id, [...selected])
-      await saveTeams(week.id, teams)
+      await saveTeams(week.id, finalTeams)
       await updateWeekStatus(week.id, 'active')
       navigate(`/admin/weeks/${week.id}`)
     } catch (e) {
@@ -100,13 +131,13 @@ export default function AdminNewWeek() {
           Step {step} of 2
         </div>
         <h1 className="text-2xl font-bold" style={{ color: '#1B2F5E' }}>
-          {step === 1 ? "New Session" : 'Review Teams'}
+          {step === 1 ? 'New Session' : mode === 'auto' ? 'Review Teams' : 'Assign Teams'}
         </h1>
       </div>
 
       {error && <p className="text-red-500 text-sm">{error}</p>}
 
-      {/* Step 1: Date + attendance */}
+      {/* Step 1: Date + attendance + mode */}
       {step === 1 && (
         <div className="space-y-4">
           <div>
@@ -147,23 +178,46 @@ export default function AdminNewWeek() {
             </div>
           </div>
 
+          {/* Mode selector */}
+          <div>
+            <label className="block text-xs font-bold uppercase tracking-widest opacity-50 mb-2">Team Assignment</label>
+            <div className="grid grid-cols-2 gap-2">
+              {[
+                ['auto', 'Auto', 'Randomly assign'],
+                ['manual', 'Manual', 'Pick yourself'],
+              ].map(([val, label, sub]) => (
+                <button
+                  key={val}
+                  onClick={() => setMode(val)}
+                  className="py-3 px-4 rounded-xl border-2 text-left"
+                  style={{
+                    borderColor: mode === val ? '#1B2F5E' : '#e5e7eb',
+                    backgroundColor: mode === val ? '#f0f4ff' : 'white',
+                  }}
+                >
+                  <div className="text-sm font-bold" style={{ color: mode === val ? '#1B2F5E' : '#374151' }}>{label}</div>
+                  <div className="text-xs opacity-50">{sub}</div>
+                </button>
+              ))}
+            </div>
+          </div>
+
           <button
             onClick={goToStep2}
             disabled={selected.size < 3}
             className="w-full py-3 rounded-xl text-white text-sm font-medium disabled:opacity-30"
             style={{ backgroundColor: '#1B2F5E' }}
           >
-            Generate Teams →
+            {mode === 'auto' ? 'Generate Teams →' : 'Assign Teams →'}
           </button>
         </div>
       )}
 
-      {/* Step 2: Review teams */}
-      {step === 2 && (
+      {/* Step 2: Auto mode — review generated teams */}
+      {step === 2 && mode === 'auto' && (
         <div className="space-y-4">
           <div className="text-xs opacity-40">{selected.size} players · 2 teams</div>
 
-          {/* Teams grid */}
           <div className="grid grid-cols-2 gap-2">
             {teams.map((team, i) => (
               <div key={i} className="bg-white rounded-xl p-3 shadow-sm">
@@ -185,7 +239,7 @@ export default function AdminNewWeek() {
           </div>
 
           <button
-            onClick={() => setTeams(makeTeams())}
+            onClick={() => setTeams(buildTeams(attending))}
             className="w-full py-2 rounded-xl border text-sm font-medium"
             style={{ borderColor: '#1B2F5E', color: '#1B2F5E' }}
           >
@@ -203,6 +257,59 @@ export default function AdminNewWeek() {
             <button
               onClick={handleSave}
               disabled={saving}
+              className="flex-1 py-3 rounded-xl text-white text-sm font-medium disabled:opacity-40"
+              style={{ backgroundColor: '#1B2F5E' }}
+            >
+              {saving ? 'Saving…' : 'Lock Teams & Start ✓'}
+            </button>
+          </div>
+        </div>
+      )}
+
+      {/* Step 2: Manual mode — assign each player to a team */}
+      {step === 2 && mode === 'manual' && (
+        <div className="space-y-4">
+          <div className="text-xs opacity-40">
+            {unassignedCount > 0
+              ? `${unassignedCount} of ${attending.length} unassigned`
+              : `All ${attending.length} players assigned ✓`}
+          </div>
+
+          <div className="bg-white rounded-xl shadow-sm overflow-hidden">
+            {attending.map((p) => {
+              const assigned = manualAssign[p.id]
+              return (
+                <div key={p.id} className="flex items-center gap-3 px-4 py-3 border-b last:border-0">
+                  <span className="text-sm font-medium flex-1">{p.name}</span>
+                  {TEAM_NAMES.map((name, idx) => (
+                    <button
+                      key={idx}
+                      onClick={() => assignManual(p.id, idx)}
+                      className="text-xs font-bold px-3 py-1.5 rounded-lg"
+                      style={{
+                        backgroundColor: assigned === idx ? TEAM_COLORS[idx] : '#f3f4f6',
+                        color: assigned === idx ? 'white' : '#6b7280',
+                      }}
+                    >
+                      {name}
+                    </button>
+                  ))}
+                </div>
+              )
+            })}
+          </div>
+
+          <div className="flex gap-2">
+            <button
+              onClick={() => setStep(1)}
+              className="flex-1 py-3 rounded-xl border text-sm font-medium"
+              style={{ borderColor: '#1B2F5E', color: '#1B2F5E' }}
+            >
+              ← Back
+            </button>
+            <button
+              onClick={handleSave}
+              disabled={saving || unassignedCount > 0}
               className="flex-1 py-3 rounded-xl text-white text-sm font-medium disabled:opacity-40"
               style={{ backgroundColor: '#1B2F5E' }}
             >
