@@ -67,7 +67,7 @@ export default function WeekDetail() {
       {teams.length > 0 && (
         <div>
           <h2 className="text-xs font-bold uppercase tracking-widest mb-3 opacity-50">Teams</h2>
-          <div className="grid grid-cols-2 gap-2">
+          <div className={`grid gap-2 ${teams.length === 2 ? 'grid-cols-2' : 'grid-cols-1'}`}>
             {teams.map((team) => (
               <div key={team.id} className="bg-white rounded-xl p-3 shadow-sm">
                 <div className="text-xs font-bold uppercase tracking-wide mb-2" style={{ color: '#89B4D0' }}>

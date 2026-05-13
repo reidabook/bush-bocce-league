@@ -12,15 +12,15 @@ function shuffle(arr) {
   return a
 }
 
-function buildTeams(players) {
+function buildTeams(players, n) {
   const shuffled = shuffle(players)
-  const teams = [{ name: 'Red Team', players: [] }, { name: 'Blue Team', players: [] }]
-  shuffled.forEach((p, i) => { teams[i % 2].players.push(p) })
+  const teams = Array.from({ length: n }, (_, i) => ({ name: TEAM_NAMES[i], players: [] }))
+  shuffled.forEach((p, i) => { teams[i % n].players.push(p) })
   return teams
 }
 
-const TEAM_NAMES = ['Red Team', 'Blue Team']
-const TEAM_COLORS = ['#ef4444', '#3b82f6']
+const TEAM_NAMES = ['Red Team', 'Blue Team', 'Green Team', 'Yellow Team', 'Purple Team', 'Orange Team']
+const TEAM_COLORS = ['#ef4444', '#3b82f6', '#22c55e', '#eab308', '#a855f7', '#f97316']
 
 export default function AdminNewWeek() {
   const navigate = useNavigate()
@@ -33,8 +33,9 @@ export default function AdminNewWeek() {
   const [date, setDate] = useState(new Date().toISOString().split('T')[0])
   const [selected, setSelected] = useState(new Set())
   const [mode, setMode] = useState('auto') // 'auto' | 'manual'
+  const [teamCount, setTeamCount] = useState(2)
   const [teams, setTeams] = useState([])
-  const [manualAssign, setManualAssign] = useState({}) // playerId -> 0 (Red) | 1 (Blue)
+  const [manualAssign, setManualAssign] = useState({}) // playerId -> team index
 
   useEffect(() => {
     getPlayers()
@@ -68,13 +69,13 @@ export default function AdminNewWeek() {
   }
 
   function goToStep2() {
-    if (selected.size < 2) {
-      setError('Select at least 2 players.')
+    if (selected.size < teamCount) {
+      setError(`Select at least ${teamCount} players for ${teamCount} teams.`)
       return
     }
     setError(null)
     if (mode === 'auto') {
-      setTeams(buildTeams(attending))
+      setTeams(buildTeams(attending, teamCount))
     } else {
       setManualAssign({})
     }
@@ -100,7 +101,7 @@ export default function AdminNewWeek() {
         setError(`Unassigned: ${unassigned.map((p) => p.name).join(', ')}`)
         return
       }
-      finalTeams = [{ name: 'Red Team', players: [] }, { name: 'Blue Team', players: [] }]
+      finalTeams = Array.from({ length: teamCount }, (_, i) => ({ name: TEAM_NAMES[i], players: [] }))
       for (const p of attending) finalTeams[manualAssign[p.id]].players.push(p)
     } else {
       finalTeams = teams
@@ -111,7 +112,7 @@ export default function AdminNewWeek() {
     try {
       const weeks = await getWeeks()
       const weekNumber = weeks.length + 1
-      const week = await createWeek(weekNumber, date, 2)
+      const week = await createWeek(weekNumber, date, teamCount)
       await setAttendees(week.id, [...selected])
       await saveTeams(week.id, finalTeams)
       await updateWeekStatus(week.id, 'active')
@@ -178,6 +179,27 @@ export default function AdminNewWeek() {
             </div>
           </div>
 
+          {/* Team count */}
+          <div>
+            <label className="block text-xs font-bold uppercase tracking-widest opacity-50 mb-2">Number of Teams</label>
+            <div className="flex gap-2">
+              {[2, 3, 4].map((n) => (
+                <button
+                  key={n}
+                  onClick={() => setTeamCount(n)}
+                  className="py-2 px-5 rounded-xl border-2 text-sm font-bold"
+                  style={{
+                    borderColor: teamCount === n ? '#1B2F5E' : '#e5e7eb',
+                    backgroundColor: teamCount === n ? '#f0f4ff' : 'white',
+                    color: teamCount === n ? '#1B2F5E' : '#374151',
+                  }}
+                >
+                  {n}
+                </button>
+              ))}
+            </div>
+          </div>
+
           {/* Mode selector */}
           <div>
             <label className="block text-xs font-bold uppercase tracking-widest opacity-50 mb-2">Team Assignment</label>
@@ -204,7 +226,7 @@ export default function AdminNewWeek() {
 
           <button
             onClick={goToStep2}
-            disabled={selected.size < 3}
+            disabled={selected.size < teamCount}
             className="w-full py-3 rounded-xl text-white text-sm font-medium disabled:opacity-30"
             style={{ backgroundColor: '#1B2F5E' }}
           >
@@ -218,7 +240,7 @@ export default function AdminNewWeek() {
         <div className="space-y-4">
           <div className="text-xs opacity-40">{selected.size} players · 2 teams</div>
 
-          <div className="grid grid-cols-2 gap-2">
+          <div className={`grid gap-2 ${teams.length === 2 ? 'grid-cols-2' : 'grid-cols-1'}`}>
             {teams.map((team, i) => (
               <div key={i} className="bg-white rounded-xl p-3 shadow-sm">
                 <div className="text-xs font-bold uppercase tracking-wide mb-2" style={{ color: '#89B4D0' }}>
@@ -239,7 +261,7 @@ export default function AdminNewWeek() {
           </div>
 
           <button
-            onClick={() => setTeams(buildTeams(attending))}
+            onClick={() => setTeams(buildTeams(attending, teamCount))}
             className="w-full py-2 rounded-xl border text-sm font-medium"
             style={{ borderColor: '#1B2F5E', color: '#1B2F5E' }}
           >
@@ -281,7 +303,7 @@ export default function AdminNewWeek() {
               return (
                 <div key={p.id} className="flex items-center gap-3 px-4 py-3 border-b last:border-0">
                   <span className="text-sm font-medium flex-1">{p.name}</span>
-                  {TEAM_NAMES.map((name, idx) => (
+                  {TEAM_NAMES.slice(0, teamCount).map((name, idx) => (
                     <button
                       key={idx}
                       onClick={() => assignManual(p.id, idx)}
