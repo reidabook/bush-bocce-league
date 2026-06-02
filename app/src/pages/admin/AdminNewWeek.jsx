@@ -12,14 +12,19 @@ function shuffle(arr) {
   return a
 }
 
-function buildTeams(players, n) {
-  const shuffled = shuffle(players)
-  const teams = Array.from({ length: n }, (_, i) => ({ name: TEAM_NAMES[i], players: [] }))
-  shuffled.forEach((p, i) => { teams[i % n].players.push(p) })
-  return teams
+function captainName(players) {
+  if (!players.length) return 'TBD'
+  const first = [...players].sort((a, b) => a.name.localeCompare(b.name))[0]
+  return `${first.name.split(' ')[0]}'s Team`
 }
 
-const TEAM_NAMES = ['Red Team', 'Blue Team', 'Green Team', 'Yellow Team', 'Purple Team', 'Orange Team']
+function buildTeams(players, n) {
+  const shuffled = shuffle(players)
+  const teams = Array.from({ length: n }, () => ({ players: [] }))
+  shuffled.forEach((p, i) => { teams[i % n].players.push(p) })
+  return teams.map((t) => ({ name: captainName(t.players), players: t.players }))
+}
+
 const TEAM_COLORS = ['#ef4444', '#3b82f6', '#22c55e', '#eab308', '#a855f7', '#f97316']
 
 export default function AdminNewWeek() {
@@ -64,7 +69,7 @@ export default function AdminNewWeek() {
       const next = prev.map((t) => ({ ...t, players: [...t.players] }))
       next[fromTeamIndex].players = next[fromTeamIndex].players.filter((p) => p.id !== player.id)
       next[toTeamIndex].players.push(player)
-      return next
+      return next.map((t) => ({ ...t, name: captainName(t.players) }))
     })
   }
 
@@ -101,8 +106,9 @@ export default function AdminNewWeek() {
         setError(`Unassigned: ${unassigned.map((p) => p.name).join(', ')}`)
         return
       }
-      finalTeams = Array.from({ length: teamCount }, (_, i) => ({ name: TEAM_NAMES[i], players: [] }))
+      finalTeams = Array.from({ length: teamCount }, () => ({ name: '', players: [] }))
       for (const p of attending) finalTeams[manualAssign[p.id]].players.push(p)
+      finalTeams = finalTeams.map((t) => ({ ...t, name: captainName(t.players) }))
     } else {
       finalTeams = teams
     }
@@ -303,7 +309,7 @@ export default function AdminNewWeek() {
               return (
                 <div key={p.id} className="flex items-center gap-3 px-4 py-3 border-b last:border-0">
                   <span className="text-sm font-medium flex-1">{p.name}</span>
-                  {TEAM_NAMES.slice(0, teamCount).map((name, idx) => (
+                  {Array.from({ length: teamCount }, (_, idx) => (
                     <button
                       key={idx}
                       onClick={() => assignManual(p.id, idx)}
@@ -313,7 +319,7 @@ export default function AdminNewWeek() {
                         color: assigned === idx ? 'white' : '#6b7280',
                       }}
                     >
-                      {name}
+                      Team {idx + 1}
                     </button>
                   ))}
                 </div>

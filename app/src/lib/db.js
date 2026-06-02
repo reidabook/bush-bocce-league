@@ -34,6 +34,8 @@ export async function getWeeks() { return call('getWeeks') }
 export async function getWeek(id) { return call('getWeek', { id }) }
 export async function createWeek(weekNumber, date, teamSize) { return call('createWeek', { weekNumber, date, teamSize }) }
 export async function updateWeekStatus(id, status) { return call('updateWeekStatus', { id, status }) }
+export async function updateWeekDate(id, date) { return call('updateWeekDate', { id, date }) }
+export async function deleteWeek(id) { return call('deleteWeek', { id }) }
 
 // ─── Attendance ───────────────────────────────────────────────────────────────
 

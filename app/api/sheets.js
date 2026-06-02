@@ -38,6 +38,14 @@ export default async function handler(req, res) {
         await db.updateWeekStatus(params.id, params.status)
         result = null
         break
+      case 'updateWeekDate':
+        await db.updateWeekDate(params.id, params.date)
+        result = null
+        break
+      case 'deleteWeek':
+        await db.deleteWeek(params.id)
+        result = null
+        break
 
       // Attendance
       case 'getAttendees':

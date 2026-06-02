@@ -19,7 +19,7 @@ export default function AdminDashboard() {
   }
 
   const activeWeek = weeks.find((w) => w.status === 'active')
-  const allComplete = weeks.length > 0 && weeks.every((w) => w.status === 'completed')
+  const allComplete = weeks.length > 0 && weeks.every((w) => w.status === 'completed' || w.status === 'historical')
 
   const tiles = [
     {

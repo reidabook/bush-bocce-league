@@ -117,6 +117,32 @@ export async function updateWeekStatus(id, status) {
   await row.save()
 }
 
+export async function updateWeekDate(id, date) {
+  const r = await getRows('weeks')
+  const row = r.find((row) => row.get('id') === id)
+  if (!row) throw new Error(`Week not found: ${id}`)
+  row.set('date', date)
+  await row.save()
+}
+
+export async function deleteWeek(id) {
+  const [weekRows, attendeeRows, teamRows, tpRows, gameRows, depRows, exclRows] = await Promise.all([
+    getRows('weeks'), getRows('week_attendees'), getRows('teams'), getRows('team_players'),
+    getRows('games'), getRows('player_departures'), getRows('game_player_exclusions'),
+  ])
+  const weekGameIds = new Set(gameRows.filter((r) => r.get('week_id') === id).map((r) => r.get('id')))
+  const weekTeamIds = new Set(teamRows.filter((r) => r.get('week_id') === id).map((r) => r.get('id')))
+  await Promise.all(exclRows.filter((r) => weekGameIds.has(r.get('game_id'))).map((r) => r.delete()))
+  await Promise.all(gameRows.filter((r) => r.get('week_id') === id).map((r) => r.delete()))
+  await Promise.all(depRows.filter((r) => r.get('week_id') === id).map((r) => r.delete()))
+  await Promise.all(tpRows.filter((r) => weekTeamIds.has(r.get('team_id'))).map((r) => r.delete()))
+  await Promise.all(teamRows.filter((r) => r.get('week_id') === id).map((r) => r.delete()))
+  await Promise.all(attendeeRows.filter((r) => r.get('week_id') === id).map((r) => r.delete()))
+  const weekRow = weekRows.find((r) => r.get('id') === id)
+  if (!weekRow) throw new Error(`Week not found: ${id}`)
+  await weekRow.delete()
+}
+
 // ─── Attendance ───────────────────────────────────────────────────────────────
 
 export async function getAttendees(weekId) {
