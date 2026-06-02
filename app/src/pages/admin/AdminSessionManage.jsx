@@ -1,7 +1,7 @@
 import { useEffect, useState } from 'react'
 import { useParams, useNavigate } from 'react-router-dom'
 import {
-  getWeekManageData,
+  getSessionManageData,
   addGame, recordGameResult, deleteGame, updateSessionStatus, updateSessionDate, deleteSession,
   logDeparture, removeDeparture, addPlayerToTeam,
   excludePlayerFromGame, restorePlayerToGame,
@@ -33,7 +33,7 @@ export default function AdminSessionManage() {
 
   // Single API call: fetches week, teams, games, departures, exclusions, allPlayers
   async function reload() {
-    const data = await getWeekManageData(id)
+    const data = await getSessionManageData(id)
     setWeek(data.session)
     setTeams(data.teams)
     setGames(data.games)

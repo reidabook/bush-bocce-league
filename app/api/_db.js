@@ -116,14 +116,14 @@ export async function renamePlayer(id, name) {
 function parseSession(obj) {
   return {
     ...obj,
-    week_number: parseInt(obj.week_number) || 0,
+    session_number: parseInt(obj.session_number) || 0,
     team_size: parseInt(obj.team_size) || 3,
   }
 }
 
 export async function getSessions() {
   const r = await getRows('sessions')
-  return r.map(toObj).map(parseSession).sort((a, b) => a.week_number - b.week_number)
+  return r.map(toObj).map(parseSession).sort((a, b) => a.session_number - b.session_number)
 }
 
 export async function getSession(id) {
@@ -133,20 +133,20 @@ export async function getSession(id) {
   return parseSession(toObj(row))
 }
 
-export async function createSession(weekNumber, date, teamSize) {
+export async function createSession(sessionNumber, date, teamSize) {
   const s = await sheet('sessions')
   const id = crypto.randomUUID()
   const created_at = new Date().toISOString()
   await s.addRow({
     id,
-    week_number: String(weekNumber),
+    session_number: String(sessionNumber),
     date,
     team_size: String(teamSize),
     status: 'setup',
     created_at,
   })
   invalidate('sessions')
-  return { id, week_number: weekNumber, date, team_size: teamSize, status: 'setup', created_at }
+  return { id, session_number: sessionNumber, date, team_size: teamSize, status: 'setup', created_at }
 }
 
 export async function updateSessionStatus(id, status) {

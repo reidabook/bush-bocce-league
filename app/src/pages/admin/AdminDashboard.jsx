@@ -28,7 +28,7 @@ export default function AdminDashboard() {
     {
       to: activeSession ? `/admin/sessions/${activeSession.id}` : '/admin/sessions/new',
       icon: activeSession ? '🎯' : '➕',
-      label: activeSession ? `Manage Session ${activeSession.week_number}` : 'New Session',
+      label: activeSession ? `Manage Session ${activeSession.session_number}` : 'New Session',
       desc: activeSession ? 'Record games, close session' : 'Set attendance & generate teams',
     },
     {
@@ -61,7 +61,7 @@ export default function AdminDashboard() {
                   className="text-xs px-3 py-1 rounded-full border font-medium"
                   style={{ borderColor: '#1B2F5E', color: '#1B2F5E' }}
                 >
-                  Session {s.week_number}
+                  Session {s.session_number}
                 </Link>
               ))}
           </div>

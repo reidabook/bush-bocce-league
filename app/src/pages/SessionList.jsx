@@ -83,7 +83,7 @@ export default function SessionList() {
               >
                 <div>
                   <div className="font-bold" style={{ color: '#1B2F5E' }}>
-                    Session {session.week_number}
+                    Session {session.session_number}
                   </div>
                   <div className="text-sm opacity-60">
                     {new Date(session.date + 'T12:00:00').toLocaleDateString('en-US', {

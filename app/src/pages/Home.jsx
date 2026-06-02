@@ -71,7 +71,7 @@ export default function Home() {
           style={{ backgroundColor: '#1B2F5E' }}
         >
           <div className="text-xs font-medium mb-1" style={{ color: '#89B4D0' }}>
-            SESSION {activeSession.week_number} · IN PROGRESS
+            SESSION {activeSession.session_number} · IN PROGRESS
           </div>
           <div className="font-bold text-lg">
             {new Date(activeSession.date + 'T12:00:00').toLocaleDateString('en-US', {
