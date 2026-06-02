@@ -37,7 +37,9 @@ Locking teams saves the week (status → `active`) and navigates to the week man
 - **Delete Week:** red button at the bottom — permanently removes the week and all cascading data (attendees, teams, games, departures, exclusions). Requires confirmation.
 
 ### Teams panel
-Lists all teams with their players. Each player has a **"left"** button to log an early departure, or **"undo"** if already departed. Departed players are shown struck-through and faded.
+Lists all teams with their players. Each player row has a **"Left"** button (red pill) to log an early departure, or **"Undo"** (blue pill) to reverse it. Departed players are shown struck-through and faded. All buttons meet 44px minimum touch target.
+
+**Late arrivals:** each team card has a dashed "+ Add late arrival" button when any rostered players are not yet assigned to a team. Tapping it reveals a list of unassigned players; tapping a name adds them to that team and to the week's attendee list.
 
 ### Add Game (active weeks only)
 - With 2 teams: no selection needed — always the only two teams.

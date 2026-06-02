@@ -1,9 +1,9 @@
 import { useEffect, useState } from 'react'
 import { useParams, useNavigate } from 'react-router-dom'
 import {
-  getWeek, getTeamsForWeek, getGamesForWeek,
+  getPlayers, getWeek, getTeamsForWeek, getGamesForWeek,
   addGame, recordGameResult, deleteGame, updateWeekStatus, updateWeekDate, deleteWeek,
-  getDepartures, logDeparture, removeDeparture,
+  getDepartures, logDeparture, removeDeparture, addPlayerToTeam,
   getGamePlayerExclusions, excludePlayerFromGame, restorePlayerToGame,
 } from '../../lib/db'
 import Spinner from '../../components/Spinner'
@@ -15,27 +15,32 @@ export default function AdminWeekManage() {
   const [teams, setTeams] = useState([])
   const [games, setGames] = useState([])
   const [departures, setDepartures] = useState([])
+  const [allPlayers, setAllPlayers] = useState([])
   const [loading, setLoading] = useState(true)
   const [error, setError] = useState(null)
 
   const [gameNotes, setGameNotes] = useState('')
   const [addingGame, setAddingGame] = useState(false)
   const [selectedTeams, setSelectedTeams] = useState([])
-  const [exclusions, setExclusions] = useState({}) // gameId → Set<playerId>
+  const [exclusions, setExclusions] = useState({})
 
   const [editingDate, setEditingDate] = useState(false)
   const [dateInput, setDateInput] = useState('')
   const [savingDate, setSavingDate] = useState(false)
 
+  const [addingToTeam, setAddingToTeam] = useState(null) // teamId being added to
+  const [addingPlayer, setAddingPlayer] = useState(false)
+
   async function reload() {
-    const [w, t, g, d, excl] = await Promise.all([
+    const [w, t, g, d, excl, allP] = await Promise.all([
       getWeek(id), getTeamsForWeek(id), getGamesForWeek(id),
-      getDepartures(id), getGamePlayerExclusions(id),
+      getDepartures(id), getGamePlayerExclusions(id), getPlayers(),
     ])
     setWeek(w)
     setTeams(t)
     setGames(g)
     setDepartures(d)
+    setAllPlayers(allP)
     const map = {}
     excl.forEach(({ game_id, player_id }) => {
       if (!map[game_id]) map[game_id] = new Set()
@@ -47,6 +52,10 @@ export default function AdminWeekManage() {
   useEffect(() => {
     reload().catch((e) => setError(e.message)).finally(() => setLoading(false))
   }, [id])
+
+  // Players in the roster but not yet on any team this week
+  const assignedIds = new Set(teams.flatMap((t) => t.players.map((p) => p.id)))
+  const unassigned = allPlayers.filter((p) => !assignedIds.has(p.id))
 
   async function handleAddGame(e) {
     e.preventDefault()
@@ -165,18 +174,33 @@ export default function AdminWeekManage() {
     }
   }
 
+  async function handleAddLateArrival(teamId, playerId) {
+    setAddingPlayer(true)
+    try {
+      await addPlayerToTeam(id, teamId, playerId)
+      setAddingToTeam(null)
+      await reload()
+    } catch (e) {
+      setError(e.message)
+    } finally {
+      setAddingPlayer(false)
+    }
+  }
+
   if (loading) return <Spinner />
 
   const teamMap = Object.fromEntries(teams.map((t) => [t.id, t]))
+  const departedIds = new Set(departures.map((d) => d.player_id))
 
   return (
     <div className="space-y-6">
+      {/* Header */}
       <div>
         <div className="text-xs font-bold uppercase tracking-widest opacity-40 mb-1">Admin</div>
         <h1 className="text-2xl font-bold" style={{ color: '#1B2F5E' }}>
           Week {week?.week_number}
         </h1>
-        <div className="text-sm opacity-50 mt-0.5">
+        <div className="text-sm opacity-50 mt-1">
           {editingDate ? (
             <form onSubmit={handleUpdateDate} className="flex items-center gap-2">
               <input
@@ -184,13 +208,13 @@ export default function AdminWeekManage() {
                 value={dateInput}
                 onChange={(e) => setDateInput(e.target.value)}
                 autoFocus
-                className="px-2 py-1 rounded border text-sm outline-none focus:ring-2"
+                className="px-3 py-2 rounded-xl border text-sm outline-none focus:ring-2"
                 style={{ borderColor: '#e5e7eb' }}
               />
               <button
                 type="submit"
                 disabled={savingDate || !dateInput}
-                className="text-xs font-medium disabled:opacity-40"
+                className="text-sm font-medium disabled:opacity-40 px-3 py-2"
                 style={{ color: '#1B2F5E' }}
               >
                 Save
@@ -198,13 +222,13 @@ export default function AdminWeekManage() {
               <button
                 type="button"
                 onClick={() => setEditingDate(false)}
-                className="text-xs text-gray-400 hover:text-gray-600"
+                className="text-sm text-gray-400 px-2 py-2"
               >
                 Cancel
               </button>
             </form>
           ) : (
-            <span className="flex items-center gap-2">
+            <span className="flex items-center gap-3 flex-wrap">
               <span>
                 {week && new Date(week.date + 'T12:00:00').toLocaleDateString('en-US', {
                   weekday: 'long', month: 'long', day: 'numeric',
@@ -215,7 +239,7 @@ export default function AdminWeekManage() {
               </span>
               <button
                 onClick={() => { setDateInput(week?.date ?? ''); setEditingDate(true) }}
-                className="text-xs text-blue-400 hover:text-blue-600"
+                className="text-xs text-blue-400 hover:text-blue-600 py-1"
               >
                 Edit date
               </button>
@@ -228,22 +252,25 @@ export default function AdminWeekManage() {
 
       {/* Teams */}
       <div>
-        <h2 className="text-xs font-bold uppercase tracking-widest opacity-50 mb-2">Teams</h2>
-        <div className={`grid gap-2 ${teams.length === 2 ? 'grid-cols-2' : 'grid-cols-1'}`}>
-          {teams.map((team) => {
-            const departedIds = new Set(departures.map((d) => d.player_id))
-            return (
-              <div key={team.id} className="bg-white rounded-xl p-3 shadow-sm">
-                <div className="text-xs font-bold uppercase tracking-wide mb-1" style={{ color: '#89B4D0' }}>
-                  {team.name}
-                </div>
+        <h2 className="text-xs font-bold uppercase tracking-widest opacity-50 mb-3">Teams</h2>
+        <div className={`grid gap-3 ${teams.length === 2 ? 'grid-cols-2' : 'grid-cols-1'}`}>
+          {teams.map((team) => (
+            <div key={team.id} className="bg-white rounded-xl p-4 shadow-sm">
+              <div className="text-xs font-bold uppercase tracking-wide mb-3" style={{ color: '#89B4D0' }}>
+                {team.name}
+              </div>
+
+              <div className="space-y-1">
                 {team.players.map((p) => {
                   const hasDeparted = departedIds.has(p.id)
                   return (
-                    <div key={p.id} className="flex items-center justify-between py-0.5 gap-1">
+                    <div key={p.id} className="flex items-center gap-2 min-h-[44px]">
                       <span
-                        className="text-xs"
-                        style={{ opacity: hasDeparted ? 0.4 : 1, textDecoration: hasDeparted ? 'line-through' : 'none' }}
+                        className="text-sm flex-1 leading-tight"
+                        style={{
+                          opacity: hasDeparted ? 0.4 : 1,
+                          textDecoration: hasDeparted ? 'line-through' : 'none',
+                        }}
                       >
                         {p.name}
                       </span>
@@ -251,18 +278,18 @@ export default function AdminWeekManage() {
                         hasDeparted ? (
                           <button
                             onClick={() => handleRemoveDeparture(p.id)}
-                            className="text-xs opacity-30 hover:opacity-70 flex-shrink-0"
-                            title="Undo departure"
+                            className="flex-shrink-0 px-3 py-1.5 rounded-lg text-xs font-medium"
+                            style={{ backgroundColor: '#f0f4ff', color: '#1B2F5E' }}
                           >
-                            undo
+                            Undo
                           </button>
                         ) : (
                           <button
                             onClick={() => handleLogDeparture(p.id)}
-                            className="text-xs opacity-30 hover:opacity-70 flex-shrink-0"
-                            title="Mark as left early"
+                            className="flex-shrink-0 px-3 py-1.5 rounded-lg text-xs font-medium"
+                            style={{ backgroundColor: '#fef2f2', color: '#ef4444' }}
                           >
-                            left
+                            Left
                           </button>
                         )
                       )}
@@ -270,22 +297,58 @@ export default function AdminWeekManage() {
                   )
                 })}
               </div>
-            )
-          })}
+
+              {/* Late arrival */}
+              {week?.status !== 'completed' && unassigned.length > 0 && (
+                addingToTeam === team.id ? (
+                  <div className="mt-3 pt-3 border-t" style={{ borderColor: '#e5e7eb' }}>
+                    <div className="text-xs font-medium opacity-50 mb-2">Add to this team:</div>
+                    <div className="flex flex-col gap-1.5">
+                      {unassigned.map((p) => (
+                        <button
+                          key={p.id}
+                          onClick={() => handleAddLateArrival(team.id, p.id)}
+                          disabled={addingPlayer}
+                          className="w-full text-left px-3 py-3 rounded-xl text-sm font-medium disabled:opacity-40"
+                          style={{ backgroundColor: '#f0f4ff', color: '#1B2F5E' }}
+                        >
+                          {p.name}
+                        </button>
+                      ))}
+                    </div>
+                    <button
+                      onClick={() => setAddingToTeam(null)}
+                      className="mt-2 text-xs opacity-40 hover:opacity-70 py-1"
+                    >
+                      Cancel
+                    </button>
+                  </div>
+                ) : (
+                  <button
+                    onClick={() => setAddingToTeam(team.id)}
+                    className="mt-3 w-full py-2.5 rounded-xl border text-xs font-medium opacity-60 hover:opacity-100 transition-opacity"
+                    style={{ borderColor: '#1B2F5E', color: '#1B2F5E', borderStyle: 'dashed' }}
+                  >
+                    + Add late arrival
+                  </button>
+                )
+              )}
+            </div>
+          ))}
         </div>
         {departures.length > 0 && (
-          <p className="text-xs opacity-40 mt-1 px-1">Departed players won't earn points for games after they left.</p>
+          <p className="text-xs opacity-40 mt-2 px-1">Departed players won't earn points for games after they left.</p>
         )}
       </div>
 
       {/* Add game */}
       {week?.status !== 'completed' && (
         <div>
-          <h2 className="text-xs font-bold uppercase tracking-widest opacity-50 mb-2">Add Game</h2>
+          <h2 className="text-xs font-bold uppercase tracking-widest opacity-50 mb-3">Add Game</h2>
           <form onSubmit={handleAddGame} className="bg-white rounded-xl p-4 shadow-sm space-y-3">
             {teams.length > 2 && (
               <div>
-                <div className="text-xs opacity-50 mb-2 font-medium">Which two teams are playing?</div>
+                <div className="text-sm font-medium opacity-60 mb-3">Which two teams are playing?</div>
                 <div className="flex flex-wrap gap-2">
                   {teams.map((team) => {
                     const isSelected = selectedTeams.includes(team.id)
@@ -301,7 +364,7 @@ export default function AdminWeekManage() {
                             setSelectedTeams((prev) => [...prev, team.id])
                           }
                         }}
-                        className="px-3 py-1.5 rounded-lg text-sm font-medium"
+                        className="flex-1 px-3 py-3 rounded-xl text-sm font-medium min-h-[44px]"
                         style={{
                           backgroundColor: isSelected ? '#1B2F5E' : '#f3f4f6',
                           color: isSelected ? 'white' : isFull ? '#d1d5db' : '#374151',
@@ -319,13 +382,13 @@ export default function AdminWeekManage() {
               value={gameNotes}
               onChange={(e) => setGameNotes(e.target.value)}
               placeholder="Notes (optional)"
-              className="w-full px-3 py-2 rounded-lg border text-sm outline-none"
+              className="w-full px-4 py-3 rounded-xl border text-sm outline-none focus:ring-2"
               style={{ borderColor: '#e5e7eb' }}
             />
             <button
               type="submit"
               disabled={addingGame || teams.length < 2 || (teams.length > 2 && selectedTeams.length !== 2)}
-              className="w-full py-2 rounded-xl text-white text-sm font-medium disabled:opacity-40"
+              className="w-full py-4 rounded-xl text-white text-base font-semibold disabled:opacity-40"
               style={{ backgroundColor: '#1B2F5E' }}
             >
               {addingGame ? 'Adding…' : '+ Add Game'}
@@ -337,59 +400,65 @@ export default function AdminWeekManage() {
       {/* Game results */}
       {games.length > 0 && (
         <div>
-          <h2 className="text-xs font-bold uppercase tracking-widest opacity-50 mb-2">
+          <h2 className="text-xs font-bold uppercase tracking-widest opacity-50 mb-3">
             Games ({games.length})
           </h2>
-          <div className="space-y-2">
+          <div className="space-y-3">
             {games.map((game, i) => {
               const teamA = teamMap[game.team_a_id]
               const teamB = teamMap[game.team_b_id]
               if (!teamA || !teamB) return null
 
               return (
-                <div key={game.id} className="bg-white rounded-xl p-3 shadow-sm">
-                  <div className="flex items-center justify-between mb-2">
-                    <div className="text-xs opacity-40 font-medium">Game {i + 1}</div>
+                <div key={game.id} className="bg-white rounded-xl p-4 shadow-sm">
+                  <div className="flex items-center justify-between mb-3">
+                    <div className="text-sm font-semibold opacity-40">Game {i + 1}</div>
                     {week?.status !== 'completed' && (
                       <button
                         onClick={() => handleDeleteGame(game.id)}
-                        className="text-xs text-red-400 hover:text-red-600"
+                        className="px-3 py-1.5 rounded-lg text-xs font-medium"
+                        style={{ backgroundColor: '#fef2f2', color: '#ef4444' }}
                       >
                         Delete
                       </button>
                     )}
                   </div>
+
                   {game.winner_team_id ? (
-                    <div className="text-sm">
-                      <span className="font-bold text-green-600">✓ {teamMap[game.winner_team_id]?.name}</span>
-                      <span className="opacity-40 mx-2">beat</span>
-                      <span className="opacity-50">
-                        {game.winner_team_id === game.team_a_id ? teamB.name : teamA.name}
-                      </span>
-                      {week?.status !== 'completed' && (
-                        <button
-                          onClick={() => handleRecordWinner(game.id, null)}
-                          className="ml-2 text-xs opacity-30 hover:opacity-70"
-                        >
-                          (clear)
-                        </button>
-                      )}
-                      {game.notes && <div className="text-xs mt-1 opacity-40 italic">{game.notes}</div>}
+                    <div>
+                      <div className="flex items-baseline gap-2 flex-wrap">
+                        <span className="text-base font-bold text-green-600">
+                          ✓ {teamMap[game.winner_team_id]?.name}
+                        </span>
+                        <span className="text-sm opacity-40">beat</span>
+                        <span className="text-sm opacity-50">
+                          {game.winner_team_id === game.team_a_id ? teamB.name : teamA.name}
+                        </span>
+                        {week?.status !== 'completed' && (
+                          <button
+                            onClick={() => handleRecordWinner(game.id, null)}
+                            className="text-xs opacity-40 hover:opacity-70 underline"
+                          >
+                            clear
+                          </button>
+                        )}
+                      </div>
+                      {game.notes && <div className="text-sm mt-1 opacity-40 italic">{game.notes}</div>}
                     </div>
                   ) : (
                     <div className="space-y-2">
-                      <div className="text-xs opacity-50 font-medium">Who won?</div>
+                      <div className="text-sm font-medium opacity-50">Who won?</div>
                       <div className="flex gap-2">
                         <button
                           onClick={() => handleRecordWinner(game.id, teamA.id)}
-                          className="flex-1 py-2 rounded-lg border text-sm font-medium hover:bg-navy-light transition-colors"
+                          className="flex-1 py-4 rounded-xl border text-sm font-semibold"
                           style={{ borderColor: '#1B2F5E', color: '#1B2F5E' }}
                         >
                           {teamA.name}
                         </button>
                         <button
                           onClick={() => handleRecordWinner(game.id, teamB.id)}
-                          className="flex-1 py-2 rounded-lg border text-sm font-medium"
+                          className="flex-1 py-4 rounded-xl border text-sm font-semibold"
                           style={{ borderColor: '#1B2F5E', color: '#1B2F5E' }}
                         >
                           {teamB.name}
@@ -400,40 +469,36 @@ export default function AdminWeekManage() {
 
                   {/* Per-game player exclusions */}
                   {week?.status !== 'completed' && (() => {
-                    const gamePlayers = [
-                      ...(teamA.players ?? []),
-                      ...(teamB.players ?? []),
-                    ]
+                    const gamePlayers = [...(teamA.players ?? []), ...(teamB.players ?? [])]
                     if (gamePlayers.length === 0) return null
                     const gameExcl = exclusions[game.id] ?? new Set()
                     const hasExclusions = gameExcl.size > 0
                     return (
-                      <details className="mt-2" open={hasExclusions}>
-                        <summary className="text-xs opacity-40 cursor-pointer select-none hover:opacity-70">
+                      <details className="mt-3" open={hasExclusions}>
+                        <summary className="text-sm opacity-40 cursor-pointer select-none hover:opacity-70 py-1">
                           Player exceptions{hasExclusions ? ` (${gameExcl.size} excluded)` : ''}
                         </summary>
-                        <div className="mt-1.5 flex flex-wrap gap-1.5">
+                        <div className="mt-2 flex flex-wrap gap-2">
                           {gamePlayers.map((p) => {
                             const isExcluded = gameExcl.has(p.id)
                             return (
                               <button
                                 key={p.id}
                                 onClick={() => handleToggleExclusion(game.id, p.id)}
-                                className="px-2 py-0.5 rounded text-xs font-medium border transition-colors"
+                                className="px-3 py-2 rounded-lg text-sm font-medium border transition-colors min-h-[44px]"
                                 style={{
                                   borderColor: isExcluded ? '#fca5a5' : '#e5e7eb',
                                   backgroundColor: isExcluded ? '#fef2f2' : '#f9fafb',
                                   color: isExcluded ? '#ef4444' : '#6b7280',
                                   textDecoration: isExcluded ? 'line-through' : 'none',
                                 }}
-                                title={isExcluded ? 'Tap to include in this game' : 'Tap to exclude from this game'}
                               >
                                 {p.name}
                               </button>
                             )
                           })}
                         </div>
-                        <p className="text-xs opacity-30 mt-1">
+                        <p className="text-xs opacity-30 mt-2">
                           Excluded players won't earn points for this game.
                         </p>
                       </details>
@@ -446,12 +511,12 @@ export default function AdminWeekManage() {
         </div>
       )}
 
-      {/* Close / reopen week */}
-      <div className="pt-2 space-y-2">
+      {/* Close / reopen / delete */}
+      <div className="pt-2 space-y-3">
         {week?.status === 'completed' ? (
           <button
             onClick={handleReopenWeek}
-            className="w-full py-3 rounded-xl border text-sm font-medium opacity-50 hover:opacity-100"
+            className="w-full py-4 rounded-xl border text-sm font-medium opacity-50 hover:opacity-100"
             style={{ borderColor: '#1B2F5E', color: '#1B2F5E' }}
           >
             Reopen Week
@@ -460,7 +525,7 @@ export default function AdminWeekManage() {
           <button
             onClick={handleCloseWeek}
             disabled={games.length === 0}
-            className="w-full py-3 rounded-xl text-white text-sm font-bold disabled:opacity-30"
+            className="w-full py-4 rounded-xl text-white text-base font-bold disabled:opacity-30"
             style={{ backgroundColor: '#1B2F5E' }}
           >
             Close Week & Finalize Points ✓
@@ -468,7 +533,7 @@ export default function AdminWeekManage() {
         )}
         <button
           onClick={handleDeleteWeek}
-          className="w-full py-3 rounded-xl border text-sm font-medium opacity-50 hover:opacity-100"
+          className="w-full py-4 rounded-xl border text-sm font-medium opacity-50 hover:opacity-100"
           style={{ borderColor: '#ef4444', color: '#ef4444' }}
         >
           Delete Week
