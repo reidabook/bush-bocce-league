@@ -51,6 +51,10 @@ export default async function handler(req, res) {
         result = null
         break
 
+      case 'getWeekManageData':
+        result = await db.getWeekManageData(params.id)
+        break
+
       // Attendance
       case 'getAttendees':
         result = await db.getAttendees(params.weekId)
