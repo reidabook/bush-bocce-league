@@ -171,7 +171,7 @@ export default function ActiveSession() {
       <div>
         <div className="text-xs font-bold uppercase tracking-widest opacity-40 mb-1">Live</div>
         <h1 className="text-2xl font-bold" style={{ color: '#1B2F5E' }}>
-          Session {week.week_number} · Active
+          Session {week.session_number} · Active
         </h1>
         <div className="text-sm opacity-50">{dateStr}</div>
       </div>

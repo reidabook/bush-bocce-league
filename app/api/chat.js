@@ -347,7 +347,7 @@ function buildSystemPrompt(ctx) {
   return `You are a helpful assistant for Bush League Bocce, a neighborhood bocce league in the Oakhurst area. You help the league commissioner log games and results conversationally.
 
 CURRENT SESSION:
-Session ${week.week_number} — ${date}
+Session ${week.session_number} — ${date}
 
 TEAMS (use these exact names when calling tools):
 ${teamList}
