@@ -25,9 +25,23 @@ async function sheet(name) {
   return s
 }
 
+// ─── Row cache (30s TTL, per warm Lambda instance) ────────────────────────────
+
+const _cache = {}
+const CACHE_TTL = 30_000
+
 async function getRows(sheetName) {
+  const now = Date.now()
+  const hit = _cache[sheetName]
+  if (hit && now - hit.ts < CACHE_TTL) return hit.rows
   const s = await sheet(sheetName)
-  return s.getRows()
+  const rows = await s.getRows()
+  _cache[sheetName] = { rows, ts: now }
+  return rows
+}
+
+function invalidate(...names) {
+  for (const n of names) delete _cache[n]
 }
 
 function toObj(row) {
@@ -53,6 +67,7 @@ export async function addPlayer(name) {
   const id = crypto.randomUUID()
   const created_at = new Date().toISOString()
   await s.addRow({ id, name: name.trim(), active: 'true', created_at })
+  invalidate('players')
   return { id, name: name.trim(), active: true, created_at }
 }
 
@@ -62,6 +77,7 @@ export async function deactivatePlayer(id) {
   if (!row) throw new Error(`Player not found: ${id}`)
   row.set('active', 'false')
   await row.save()
+  invalidate('players')
 }
 
 export async function addPlayerToTeam(weekId, teamId, playerId) {
@@ -83,6 +99,7 @@ export async function addPlayerToTeam(weekId, teamId, playerId) {
     const s = await sheet('team_players')
     await s.addRow({ team_id: teamId, player_id: playerId })
   }
+  invalidate('week_attendees', 'team_players')
 }
 
 export async function renamePlayer(id, name) {
@@ -91,6 +108,7 @@ export async function renamePlayer(id, name) {
   if (!row) throw new Error(`Player not found: ${id}`)
   row.set('name', name.trim())
   await row.save()
+  invalidate('players')
 }
 
 // ─── Weeks ────────────────────────────────────────────────────────────────────
@@ -127,6 +145,7 @@ export async function createWeek(weekNumber, date, teamSize) {
     status: 'setup',
     created_at,
   })
+  invalidate('weeks')
   return { id, week_number: weekNumber, date, team_size: teamSize, status: 'setup', created_at }
 }
 
@@ -136,6 +155,7 @@ export async function updateWeekStatus(id, status) {
   if (!row) throw new Error(`Week not found: ${id}`)
   row.set('status', status)
   await row.save()
+  invalidate('weeks')
 }
 
 export async function updateWeekDate(id, date) {
@@ -144,6 +164,7 @@ export async function updateWeekDate(id, date) {
   if (!row) throw new Error(`Week not found: ${id}`)
   row.set('date', date)
   await row.save()
+  invalidate('weeks')
 }
 
 export async function deleteWeek(id) {
@@ -162,6 +183,7 @@ export async function deleteWeek(id) {
   const weekRow = weekRows.find((r) => r.get('id') === id)
   if (!weekRow) throw new Error(`Week not found: ${id}`)
   await weekRow.delete()
+  invalidate('weeks', 'week_attendees', 'teams', 'team_players', 'games', 'player_departures', 'game_player_exclusions')
 }
 
 // ─── Attendance ───────────────────────────────────────────────────────────────
@@ -177,13 +199,14 @@ export async function getAttendees(weekId) {
 }
 
 export async function setAttendees(weekId, playerIds) {
-  const s = await sheet('week_attendees')
-  const existing = await s.getRows()
+  const existing = await getRows('week_attendees')
   const toDelete = existing.filter((row) => row.get('week_id') === weekId)
   await Promise.all(toDelete.map((row) => row.delete()))
   if (playerIds.length > 0) {
+    const s = await sheet('week_attendees')
     await s.addRows(playerIds.map((pid) => ({ week_id: weekId, player_id: pid })))
   }
+  invalidate('week_attendees')
 }
 
 // ─── Teams ────────────────────────────────────────────────────────────────────
@@ -229,6 +252,7 @@ export async function saveTeams(weekId, teams) {
       await tpSheet.addRows(teams[i].players.map((p) => ({ team_id: teamId, player_id: p.id })))
     }
   }
+  invalidate('teams', 'team_players')
 }
 
 // ─── Games ────────────────────────────────────────────────────────────────────
@@ -259,6 +283,7 @@ export async function addGame(weekId, teamAId, teamBId, notes = null) {
     notes: notes ?? '',
     created_at,
   })
+  invalidate('games')
   return { id, week_id: weekId, team_a_id: teamAId, team_b_id: teamBId, winner_team_id: null, notes, created_at }
 }
 
@@ -268,6 +293,7 @@ export async function recordGameResult(gameId, winnerTeamId) {
   if (!row) throw new Error(`Game not found: ${gameId}`)
   row.set('winner_team_id', winnerTeamId)
   await row.save()
+  invalidate('games')
 }
 
 export async function deleteGame(gameId) {
@@ -275,6 +301,7 @@ export async function deleteGame(gameId) {
   const row = r.find((row) => row.get('id') === gameId)
   if (!row) throw new Error(`Game not found: ${gameId}`)
   await row.delete()
+  invalidate('games')
 }
 
 export async function clearGameResult(gameId) {
@@ -283,6 +310,7 @@ export async function clearGameResult(gameId) {
   if (!row) throw new Error(`Game not found: ${gameId}`)
   row.set('winner_team_id', '')
   await row.save()
+  invalidate('games')
 }
 
 // ─── Departures ───────────────────────────────────────────────────────────────
@@ -319,6 +347,7 @@ export async function logDeparture(weekId, playerId) {
       departed_at: new Date().toISOString(),
     })
   }
+  invalidate('player_departures')
 }
 
 export async function removeDeparture(weekId, playerId) {
@@ -327,6 +356,7 @@ export async function removeDeparture(weekId, playerId) {
     (row) => row.get('week_id') === weekId && row.get('player_id') === playerId
   )
   if (row) await row.delete()
+  invalidate('player_departures')
 }
 
 // ─── Game Player Exclusions ───────────────────────────────────────────────────
@@ -351,6 +381,7 @@ export async function excludePlayerFromGame(gameId, playerId) {
     const s = await sheet('game_player_exclusions')
     await s.addRow({ id: crypto.randomUUID(), game_id: gameId, player_id: playerId })
   }
+  invalidate('game_player_exclusions')
 }
 
 export async function restorePlayerToGame(gameId, playerId) {
@@ -359,6 +390,66 @@ export async function restorePlayerToGame(gameId, playerId) {
     (row) => row.get('game_id') === gameId && row.get('player_id') === playerId
   )
   if (row) await row.delete()
+  invalidate('game_player_exclusions')
+}
+
+// ─── Week manage snapshot (all data in one serverless call) ──────────────────
+
+export async function getWeekManageData(weekId) {
+  const [weekRows, teamRows, tpRows, playerRows, gameRows, depRows, exclRows] = await Promise.all([
+    getRows('weeks'),
+    getRows('teams'),
+    getRows('team_players'),
+    getRows('players'),
+    getRows('games'),
+    getRows('player_departures'),
+    getRows('game_player_exclusions'),
+  ])
+
+  const weekRow = weekRows.find((r) => r.get('id') === weekId)
+  if (!weekRow) throw new Error(`Week not found: ${weekId}`)
+  const week = parseWeek(toObj(weekRow))
+
+  const playerMap = Object.fromEntries(playerRows.map(toObj).map((p) => [p.id, p]))
+  const allPlayers = playerRows.map(toObj)
+    .filter((p) => p.active?.toLowerCase() === 'true')
+    .sort((a, b) => a.name.localeCompare(b.name))
+
+  const tpObjs = tpRows.map(toObj)
+  const teams = teamRows
+    .map(toObj)
+    .filter((t) => t.week_id === weekId)
+    .sort((a, b) => a.name.localeCompare(b.name))
+    .map((t) => ({
+      ...t,
+      players: tpObjs
+        .filter((tp) => tp.team_id === t.id)
+        .map((tp) => playerMap[tp.player_id])
+        .filter(Boolean),
+    }))
+
+  const games = gameRows
+    .map(toObj)
+    .filter((g) => g.week_id === weekId)
+    .sort((a, b) => new Date(a.created_at) - new Date(b.created_at))
+    .map(normalizeGame)
+
+  const gameIds = new Set(games.map((g) => g.id))
+
+  const departures = depRows
+    .map(toObj)
+    .filter((d) => d.week_id === weekId)
+    .sort((a, b) => new Date(a.departed_at) - new Date(b.departed_at))
+    .map((d) => ({
+      id: d.id,
+      player_id: d.player_id,
+      name: playerMap[d.player_id]?.name ?? '?',
+      departed_at: d.departed_at,
+    }))
+
+  const exclusions = exclRows.map(toObj).filter((e) => gameIds.has(e.game_id))
+
+  return { week, teams, games, departures, exclusions, allPlayers }
 }
 
 // ─── Standings ────────────────────────────────────────────────────────────────
@@ -544,6 +635,7 @@ export async function createTournament(seededPlayerIds) {
     })
   }
   if (matches.length > 0) await mSheet.addRows(matches)
+  invalidate('tournament', 'tournament_matches')
   return { id: tournamentId, status: 'active', format: 'single_elimination' }
 }
 
@@ -609,6 +701,7 @@ export async function recordMatchResult(matchId, winnerId, tournamentId, round, 
       is_bye: 'false',
     })
   }
+  invalidate('tournament_matches')
 }
 
 export async function completeTournament(tournamentId) {
@@ -617,4 +710,5 @@ export async function completeTournament(tournamentId) {
   if (!row) throw new Error(`Tournament not found: ${tournamentId}`)
   row.set('status', 'complete')
   await row.save()
+  invalidate('tournament')
 }

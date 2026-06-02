@@ -52,7 +52,7 @@ export default function WeekDetail() {
             weekday: 'long', month: 'long', day: 'numeric',
           })}
         </h1>
-        {admin && week.status !== 'completed' && (
+        {admin && (
           <Link
             to={`/admin/weeks/${week.id}`}
             className="inline-block mt-2 text-sm px-3 py-1 rounded-lg text-white"

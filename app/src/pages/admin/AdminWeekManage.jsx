@@ -1,10 +1,10 @@
 import { useEffect, useState } from 'react'
 import { useParams, useNavigate } from 'react-router-dom'
 import {
-  getPlayers, getWeek, getTeamsForWeek, getGamesForWeek,
+  getWeekManageData,
   addGame, recordGameResult, deleteGame, updateWeekStatus, updateWeekDate, deleteWeek,
-  getDepartures, logDeparture, removeDeparture, addPlayerToTeam,
-  getGamePlayerExclusions, excludePlayerFromGame, restorePlayerToGame,
+  logDeparture, removeDeparture, addPlayerToTeam,
+  excludePlayerFromGame, restorePlayerToGame,
 } from '../../lib/db'
 import Spinner from '../../components/Spinner'
 
@@ -28,21 +28,19 @@ export default function AdminWeekManage() {
   const [dateInput, setDateInput] = useState('')
   const [savingDate, setSavingDate] = useState(false)
 
-  const [addingToTeam, setAddingToTeam] = useState(null) // teamId being added to
+  const [addingToTeam, setAddingToTeam] = useState(null)
   const [addingPlayer, setAddingPlayer] = useState(false)
 
+  // Single API call: fetches week, teams, games, departures, exclusions, allPlayers
   async function reload() {
-    const [w, t, g, d, excl, allP] = await Promise.all([
-      getWeek(id), getTeamsForWeek(id), getGamesForWeek(id),
-      getDepartures(id), getGamePlayerExclusions(id), getPlayers(),
-    ])
-    setWeek(w)
-    setTeams(t)
-    setGames(g)
-    setDepartures(d)
-    setAllPlayers(allP)
+    const data = await getWeekManageData(id)
+    setWeek(data.week)
+    setTeams(data.teams)
+    setGames(data.games)
+    setDepartures(data.departures)
+    setAllPlayers(data.allPlayers)
     const map = {}
-    excl.forEach(({ game_id, player_id }) => {
+    data.exclusions.forEach(({ game_id, player_id }) => {
       if (!map[game_id]) map[game_id] = new Set()
       map[game_id].add(player_id)
     })
@@ -53,7 +51,7 @@ export default function AdminWeekManage() {
     reload().catch((e) => setError(e.message)).finally(() => setLoading(false))
   }, [id])
 
-  // Players in the roster but not yet on any team this week
+  const isActive = week?.status === 'active'
   const assignedIds = new Set(teams.flatMap((t) => t.players.map((p) => p.id)))
   const unassigned = allPlayers.filter((p) => !assignedIds.has(p.id))
 
@@ -108,6 +106,15 @@ export default function AdminWeekManage() {
     }
   }
 
+  async function handleReopenWeek() {
+    try {
+      await updateWeekStatus(id, 'active')
+      await reload()
+    } catch (e) {
+      setError(e.message)
+    }
+  }
+
   async function handleLogDeparture(playerId) {
     try {
       await logDeparture(id, playerId)
@@ -134,15 +141,6 @@ export default function AdminWeekManage() {
       } else {
         await excludePlayerFromGame(gameId, playerId)
       }
-      await reload()
-    } catch (e) {
-      setError(e.message)
-    }
-  }
-
-  async function handleReopenWeek() {
-    try {
-      await updateWeekStatus(id, 'active')
       await reload()
     } catch (e) {
       setError(e.message)
@@ -233,7 +231,7 @@ export default function AdminWeekManage() {
                 {week && new Date(week.date + 'T12:00:00').toLocaleDateString('en-US', {
                   weekday: 'long', month: 'long', day: 'numeric',
                 })}
-                {week?.status === 'completed' && (
+                {!isActive && (
                   <span className="ml-2 text-xs font-bold text-green-600">· Completed</span>
                 )}
               </span>
@@ -249,6 +247,13 @@ export default function AdminWeekManage() {
       </div>
 
       {error && <p className="text-red-500 text-sm">{error}</p>}
+
+      {/* Read-only notice for non-active weeks */}
+      {!isActive && (
+        <div className="rounded-xl px-4 py-3 text-sm" style={{ backgroundColor: '#f0f4ff', color: '#1B2F5E' }}>
+          This week is closed. Tap <strong>Reopen Week</strong> below to make changes.
+        </div>
+      )}
 
       {/* Teams */}
       <div>
@@ -274,7 +279,7 @@ export default function AdminWeekManage() {
                       >
                         {p.name}
                       </span>
-                      {week?.status !== 'completed' && (
+                      {isActive && (
                         hasDeparted ? (
                           <button
                             onClick={() => handleRemoveDeparture(p.id)}
@@ -299,7 +304,7 @@ export default function AdminWeekManage() {
               </div>
 
               {/* Late arrival */}
-              {week?.status !== 'completed' && unassigned.length > 0 && (
+              {isActive && unassigned.length > 0 && (
                 addingToTeam === team.id ? (
                   <div className="mt-3 pt-3 border-t" style={{ borderColor: '#e5e7eb' }}>
                     <div className="text-xs font-medium opacity-50 mb-2">Add to this team:</div>
@@ -342,7 +347,7 @@ export default function AdminWeekManage() {
       </div>
 
       {/* Add game */}
-      {week?.status !== 'completed' && (
+      {isActive && (
         <div>
           <h2 className="text-xs font-bold uppercase tracking-widest opacity-50 mb-3">Add Game</h2>
           <form onSubmit={handleAddGame} className="bg-white rounded-xl p-4 shadow-sm space-y-3">
@@ -413,7 +418,7 @@ export default function AdminWeekManage() {
                 <div key={game.id} className="bg-white rounded-xl p-4 shadow-sm">
                   <div className="flex items-center justify-between mb-3">
                     <div className="text-sm font-semibold opacity-40">Game {i + 1}</div>
-                    {week?.status !== 'completed' && (
+                    {isActive && (
                       <button
                         onClick={() => handleDeleteGame(game.id)}
                         className="px-3 py-1.5 rounded-lg text-xs font-medium"
@@ -434,7 +439,7 @@ export default function AdminWeekManage() {
                         <span className="text-sm opacity-50">
                           {game.winner_team_id === game.team_a_id ? teamB.name : teamA.name}
                         </span>
-                        {week?.status !== 'completed' && (
+                        {isActive && (
                           <button
                             onClick={() => handleRecordWinner(game.id, null)}
                             className="text-xs opacity-40 hover:opacity-70 underline"
@@ -447,28 +452,32 @@ export default function AdminWeekManage() {
                     </div>
                   ) : (
                     <div className="space-y-2">
-                      <div className="text-sm font-medium opacity-50">Who won?</div>
-                      <div className="flex gap-2">
-                        <button
-                          onClick={() => handleRecordWinner(game.id, teamA.id)}
-                          className="flex-1 py-4 rounded-xl border text-sm font-semibold"
-                          style={{ borderColor: '#1B2F5E', color: '#1B2F5E' }}
-                        >
-                          {teamA.name}
-                        </button>
-                        <button
-                          onClick={() => handleRecordWinner(game.id, teamB.id)}
-                          className="flex-1 py-4 rounded-xl border text-sm font-semibold"
-                          style={{ borderColor: '#1B2F5E', color: '#1B2F5E' }}
-                        >
-                          {teamB.name}
-                        </button>
+                      <div className="text-sm font-medium opacity-50">
+                        {isActive ? 'Who won?' : 'Pending result'}
                       </div>
+                      {isActive && (
+                        <div className="flex gap-2">
+                          <button
+                            onClick={() => handleRecordWinner(game.id, teamA.id)}
+                            className="flex-1 py-4 rounded-xl border text-sm font-semibold"
+                            style={{ borderColor: '#1B2F5E', color: '#1B2F5E' }}
+                          >
+                            {teamA.name}
+                          </button>
+                          <button
+                            onClick={() => handleRecordWinner(game.id, teamB.id)}
+                            className="flex-1 py-4 rounded-xl border text-sm font-semibold"
+                            style={{ borderColor: '#1B2F5E', color: '#1B2F5E' }}
+                          >
+                            {teamB.name}
+                          </button>
+                        </div>
+                      )}
                     </div>
                   )}
 
                   {/* Per-game player exclusions */}
-                  {week?.status !== 'completed' && (() => {
+                  {isActive && (() => {
                     const gamePlayers = [...(teamA.players ?? []), ...(teamB.players ?? [])]
                     if (gamePlayers.length === 0) return null
                     const gameExcl = exclusions[game.id] ?? new Set()
@@ -513,15 +522,7 @@ export default function AdminWeekManage() {
 
       {/* Close / reopen / delete */}
       <div className="pt-2 space-y-3">
-        {week?.status === 'completed' ? (
-          <button
-            onClick={handleReopenWeek}
-            className="w-full py-4 rounded-xl border text-sm font-medium opacity-50 hover:opacity-100"
-            style={{ borderColor: '#1B2F5E', color: '#1B2F5E' }}
-          >
-            Reopen Week
-          </button>
-        ) : (
+        {isActive ? (
           <button
             onClick={handleCloseWeek}
             disabled={games.length === 0}
@@ -529,6 +530,14 @@ export default function AdminWeekManage() {
             style={{ backgroundColor: '#1B2F5E' }}
           >
             Close Week & Finalize Points ✓
+          </button>
+        ) : (
+          <button
+            onClick={handleReopenWeek}
+            className="w-full py-4 rounded-xl border text-sm font-medium opacity-50 hover:opacity-100"
+            style={{ borderColor: '#1B2F5E', color: '#1B2F5E' }}
+          >
+            Reopen Week
           </button>
         )}
         <button
