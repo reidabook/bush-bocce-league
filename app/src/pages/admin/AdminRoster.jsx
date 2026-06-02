@@ -1,5 +1,5 @@
 import { useEffect, useState } from 'react'
-import { getPlayers, addPlayer, deactivatePlayer } from '../../lib/db'
+import { getPlayers, addPlayer, deactivatePlayer, renamePlayer } from '../../lib/db'
 import Spinner from '../../components/Spinner'
 
 export default function AdminRoster() {
@@ -8,6 +8,9 @@ export default function AdminRoster() {
   const [newName, setNewName] = useState('')
   const [adding, setAdding] = useState(false)
   const [error, setError] = useState(null)
+  const [editingId, setEditingId] = useState(null)
+  const [editName, setEditName] = useState('')
+  const [saving, setSaving] = useState(false)
 
   async function load() {
     const p = await getPlayers()
@@ -40,6 +43,32 @@ export default function AdminRoster() {
       await load()
     } catch (e) {
       setError(e.message)
+    }
+  }
+
+  function startEdit(player) {
+    setEditingId(player.id)
+    setEditName(player.name)
+  }
+
+  function cancelEdit() {
+    setEditingId(null)
+    setEditName('')
+  }
+
+  async function handleRename(e) {
+    e.preventDefault()
+    if (!editName.trim()) return
+    setSaving(true)
+    try {
+      await renamePlayer(editingId, editName)
+      setEditingId(null)
+      setEditName('')
+      await load()
+    } catch (e) {
+      setError(e.message)
+    } finally {
+      setSaving(false)
     }
   }
 
@@ -80,18 +109,54 @@ export default function AdminRoster() {
         {players.length === 0 ? (
           <p className="text-sm opacity-50 text-center py-8">No players yet.</p>
         ) : (
-          players.map((p, i) => (
+          players.map((p) => (
             <div
               key={p.id}
-              className="flex items-center justify-between px-4 py-3 border-b last:border-0"
+              className="flex items-center gap-2 px-4 py-3 border-b last:border-0"
             >
-              <div className="font-medium text-sm">{p.name}</div>
-              <button
-                onClick={() => handleRemove(p.id, p.name)}
-                className="text-xs text-red-400 hover:text-red-600"
-              >
-                Remove
-              </button>
+              {editingId === p.id ? (
+                <form onSubmit={handleRename} className="flex items-center gap-2 flex-1">
+                  <input
+                    type="text"
+                    value={editName}
+                    onChange={(e) => setEditName(e.target.value)}
+                    autoFocus
+                    className="flex-1 px-2 py-1 rounded border text-sm outline-none focus:ring-2"
+                    style={{ borderColor: '#e5e7eb' }}
+                  />
+                  <button
+                    type="submit"
+                    disabled={saving || !editName.trim()}
+                    className="text-xs font-medium disabled:opacity-40"
+                    style={{ color: '#1B2F5E' }}
+                  >
+                    Save
+                  </button>
+                  <button
+                    type="button"
+                    onClick={cancelEdit}
+                    className="text-xs text-gray-400 hover:text-gray-600"
+                  >
+                    Cancel
+                  </button>
+                </form>
+              ) : (
+                <>
+                  <div className="font-medium text-sm flex-1">{p.name}</div>
+                  <button
+                    onClick={() => startEdit(p)}
+                    className="text-xs text-blue-400 hover:text-blue-600"
+                  >
+                    Edit
+                  </button>
+                  <button
+                    onClick={() => handleRemove(p.id, p.name)}
+                    className="text-xs text-red-400 hover:text-red-600"
+                  >
+                    Remove
+                  </button>
+                </>
+              )}
             </div>
           ))
         )}

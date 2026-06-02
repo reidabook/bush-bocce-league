@@ -19,6 +19,10 @@ export default async function handler(req, res) {
         await db.deactivatePlayer(params.id)
         result = null
         break
+      case 'renamePlayer':
+        await db.renamePlayer(params.id, params.name)
+        result = null
+        break
 
       // Weeks
       case 'getWeeks':

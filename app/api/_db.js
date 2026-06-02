@@ -64,6 +64,14 @@ export async function deactivatePlayer(id) {
   await row.save()
 }
 
+export async function renamePlayer(id, name) {
+  const r = await getRows('players')
+  const row = r.find((row) => row.get('id') === id)
+  if (!row) throw new Error(`Player not found: ${id}`)
+  row.set('name', name.trim())
+  await row.save()
+}
+
 // ─── Weeks ────────────────────────────────────────────────────────────────────
 
 function parseWeek(obj) {

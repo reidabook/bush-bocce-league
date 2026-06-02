@@ -57,6 +57,7 @@ Implemented in `api/sheets.js` (routing) → `api/_db.js` (Google Sheets logic).
 | `getPlayers` | — | All active players |
 | `addPlayer` | `name` | Add to roster |
 | `deactivatePlayer` | `id` | Soft-delete |
+| `renamePlayer` | `id, name` | Update player name |
 | `getWeeks` | — | All weeks |
 | `getWeek` | `id` | Single week |
 | `createWeek` | `weekNumber, date, teamSize` | Create week in `setup` status |
