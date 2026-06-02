@@ -64,6 +64,27 @@ export async function deactivatePlayer(id) {
   await row.save()
 }
 
+export async function addPlayerToTeam(weekId, teamId, playerId) {
+  const [attendeeRows, tpRows] = await Promise.all([
+    getRows('week_attendees'),
+    getRows('team_players'),
+  ])
+  const alreadyAttending = attendeeRows.find(
+    (r) => r.get('week_id') === weekId && r.get('player_id') === playerId
+  )
+  if (!alreadyAttending) {
+    const s = await sheet('week_attendees')
+    await s.addRow({ week_id: weekId, player_id: playerId })
+  }
+  const alreadyOnTeam = tpRows.find(
+    (r) => r.get('team_id') === teamId && r.get('player_id') === playerId
+  )
+  if (!alreadyOnTeam) {
+    const s = await sheet('team_players')
+    await s.addRow({ team_id: teamId, player_id: playerId })
+  }
+}
+
 export async function renamePlayer(id, name) {
   const r = await getRows('players')
   const row = r.find((row) => row.get('id') === id)

@@ -23,6 +23,10 @@ export default async function handler(req, res) {
         await db.renamePlayer(params.id, params.name)
         result = null
         break
+      case 'addPlayerToTeam':
+        await db.addPlayerToTeam(params.weekId, params.teamId, params.playerId)
+        result = null
+        break
 
       // Weeks
       case 'getWeeks':

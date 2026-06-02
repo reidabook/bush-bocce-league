@@ -27,6 +27,7 @@ export async function getPlayers() { return call('getPlayers') }
 export async function addPlayer(name) { return call('addPlayer', { name }) }
 export async function deactivatePlayer(id) { return call('deactivatePlayer', { id }) }
 export async function renamePlayer(id, name) { return call('renamePlayer', { id, name }) }
+export async function addPlayerToTeam(weekId, teamId, playerId) { return call('addPlayerToTeam', { weekId, teamId, playerId }) }
 
 // ─── Weeks ───────────────────────────────────────────────────────────────────
 
