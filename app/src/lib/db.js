@@ -27,45 +27,45 @@ export async function getPlayers() { return call('getPlayers') }
 export async function addPlayer(name) { return call('addPlayer', { name }) }
 export async function deactivatePlayer(id) { return call('deactivatePlayer', { id }) }
 export async function renamePlayer(id, name) { return call('renamePlayer', { id, name }) }
-export async function addPlayerToTeam(weekId, teamId, playerId) { return call('addPlayerToTeam', { weekId, teamId, playerId }) }
+export async function addPlayerToTeam(sessionId, teamId, playerId) { return call('addPlayerToTeam', { sessionId, teamId, playerId }) }
 
-// ─── Weeks ───────────────────────────────────────────────────────────────────
+// ─── Sessions ────────────────────────────────────────────────────────────────
 
-export async function getWeeks() { return call('getWeeks') }
-export async function getWeek(id) { return call('getWeek', { id }) }
-export async function createWeek(weekNumber, date, teamSize) { return call('createWeek', { weekNumber, date, teamSize }) }
-export async function updateWeekStatus(id, status) { return call('updateWeekStatus', { id, status }) }
-export async function updateWeekDate(id, date) { return call('updateWeekDate', { id, date }) }
-export async function deleteWeek(id) { return call('deleteWeek', { id }) }
-export async function getWeekManageData(id) { return call('getWeekManageData', { id }) }
+export async function getSessions() { return call('getSessions') }
+export async function getSession(id) { return call('getSession', { id }) }
+export async function createSession(sessionNumber, date, teamSize) { return call('createSession', { sessionNumber, date, teamSize }) }
+export async function updateSessionStatus(id, status) { return call('updateSessionStatus', { id, status }) }
+export async function updateSessionDate(id, date) { return call('updateSessionDate', { id, date }) }
+export async function deleteSession(id) { return call('deleteSession', { id }) }
+export async function getSessionManageData(id) { return call('getSessionManageData', { id }) }
 
 // ─── Attendance ───────────────────────────────────────────────────────────────
 
-export async function getAttendees(weekId) { return call('getAttendees', { weekId }) }
-export async function setAttendees(weekId, playerIds) { return call('setAttendees', { weekId, playerIds }) }
+export async function getAttendees(sessionId) { return call('getAttendees', { sessionId }) }
+export async function setAttendees(sessionId, playerIds) { return call('setAttendees', { sessionId, playerIds }) }
 
 // ─── Teams ────────────────────────────────────────────────────────────────────
 
-export async function getTeamsForWeek(weekId) { return call('getTeamsForWeek', { weekId }) }
-export async function saveTeams(weekId, teams) { return call('saveTeams', { weekId, teams }) }
+export async function getTeamsForSession(sessionId) { return call('getTeamsForSession', { sessionId }) }
+export async function saveTeams(sessionId, teams) { return call('saveTeams', { sessionId, teams }) }
 
 // ─── Games ────────────────────────────────────────────────────────────────────
 
-export async function getGamesForWeek(weekId) { return call('getGamesForWeek', { weekId }) }
-export async function addGame(weekId, teamAId, teamBId, notes = null) { return call('addGame', { weekId, teamAId, teamBId, notes }) }
+export async function getGamesForSession(sessionId) { return call('getGamesForSession', { sessionId }) }
+export async function addGame(sessionId, teamAId, teamBId, notes = null) { return call('addGame', { sessionId, teamAId, teamBId, notes }) }
 export async function recordGameResult(gameId, winnerTeamId) { return call('recordGameResult', { gameId, winnerTeamId }) }
 export async function deleteGame(gameId) { return call('deleteGame', { gameId }) }
 export async function clearGameResult(gameId) { return call('clearGameResult', { gameId }) }
 
 // ─── Departures ───────────────────────────────────────────────────────────────
 
-export async function getDepartures(weekId) { return call('getDepartures', { weekId }) }
-export async function logDeparture(weekId, playerId) { return call('logDeparture', { weekId, playerId }) }
-export async function removeDeparture(weekId, playerId) { return call('removeDeparture', { weekId, playerId }) }
+export async function getDepartures(sessionId) { return call('getDepartures', { sessionId }) }
+export async function logDeparture(sessionId, playerId) { return call('logDeparture', { sessionId, playerId }) }
+export async function removeDeparture(sessionId, playerId) { return call('removeDeparture', { sessionId, playerId }) }
 
 // ─── Game Player Exclusions ───────────────────────────────────────────────────
 
-export async function getGamePlayerExclusions(weekId) { return call('getGamePlayerExclusions', { weekId }) }
+export async function getGamePlayerExclusions(sessionId) { return call('getGamePlayerExclusions', { sessionId }) }
 export async function excludePlayerFromGame(gameId, playerId) { return call('excludePlayerFromGame', { gameId, playerId }) }
 export async function restorePlayerToGame(gameId, playerId) { return call('restorePlayerToGame', { gameId, playerId }) }
 

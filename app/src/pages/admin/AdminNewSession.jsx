@@ -1,6 +1,6 @@
 import { useEffect, useState } from 'react'
 import { useNavigate } from 'react-router-dom'
-import { getPlayers, getWeeks, createWeek, setAttendees, saveTeams, updateWeekStatus } from '../../lib/db'
+import { getPlayers, getSessions, createSession, setAttendees, saveTeams, updateSessionStatus } from '../../lib/db'
 import Spinner from '../../components/Spinner'
 
 function shuffle(arr) {
@@ -27,7 +27,7 @@ function buildTeams(players, n) {
 
 const TEAM_COLORS = ['#ef4444', '#3b82f6', '#22c55e', '#eab308', '#a855f7', '#f97316']
 
-export default function AdminNewWeek() {
+export default function AdminNewSession() {
   const navigate = useNavigate()
   const [step, setStep] = useState(1)
   const [allPlayers, setAllPlayers] = useState([])
@@ -116,13 +116,13 @@ export default function AdminNewWeek() {
     setSaving(true)
     setError(null)
     try {
-      const weeks = await getWeeks()
-      const weekNumber = weeks.length + 1
-      const week = await createWeek(weekNumber, date, teamCount)
-      await setAttendees(week.id, [...selected])
-      await saveTeams(week.id, finalTeams)
-      await updateWeekStatus(week.id, 'active')
-      navigate(`/admin/weeks/${week.id}`)
+      const sessions = await getSessions()
+      const sessionNumber = sessions.length + 1
+      const session = await createSession(sessionNumber, date, teamCount)
+      await setAttendees(session.id, [...selected])
+      await saveTeams(session.id, finalTeams)
+      await updateSessionStatus(session.id, 'active')
+      navigate(`/admin/sessions/${session.id}`)
     } catch (e) {
       setError(e.message)
       setSaving(false)

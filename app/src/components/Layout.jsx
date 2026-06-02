@@ -8,7 +8,7 @@ export default function Layout({ children }) {
   const nav = [
     { to: '/', label: 'Standings' },
     { to: '/active', label: 'Active' },
-    { to: '/weeks', label: 'Weeks' },
+    { to: '/sessions', label: 'Sessions' },
     { to: '/rules', label: 'Rules' },
   ]
 

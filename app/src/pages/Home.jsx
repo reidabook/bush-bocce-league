@@ -1,21 +1,21 @@
 import { useEffect, useState } from 'react'
 import { Link } from 'react-router-dom'
-import { getStandings, getWeeks } from '../lib/db'
+import { getStandings, getSessions } from '../lib/db'
 import Spinner from '../components/Spinner'
 
 export default function Home() {
   const [standings, setStandings] = useState([])
-  const [activeWeek, setActiveWeek] = useState(null)
+  const [activeSession, setActiveSession] = useState(null)
   const [loading, setLoading] = useState(true)
   const [error, setError] = useState(null)
   const [initializing, setInitializing] = useState(false)
   const [initResult, setInitResult] = useState(null)
 
   useEffect(() => {
-    Promise.all([getStandings(), getWeeks()])
-      .then(([s, weeks]) => {
+    Promise.all([getStandings(), getSessions()])
+      .then(([s, sessions]) => {
         setStandings(s)
-        setActiveWeek(weeks.find((w) => w.status === 'active') || null)
+        setActiveSession(sessions.find((s) => s.status === 'active') || null)
       })
       .catch((e) => setError(e.message))
       .finally(() => setLoading(false))
@@ -63,18 +63,18 @@ export default function Home() {
 
   return (
     <div className="space-y-5">
-      {/* Active week banner */}
-      {activeWeek && (
+      {/* Active session banner */}
+      {activeSession && (
         <Link
-          to={`/weeks/${activeWeek.id}`}
+          to={`/sessions/${activeSession.id}`}
           className="block rounded-xl p-4 text-white shadow"
           style={{ backgroundColor: '#1B2F5E' }}
         >
           <div className="text-xs font-medium mb-1" style={{ color: '#89B4D0' }}>
-            WEEK {activeWeek.week_number} · IN PROGRESS
+            SESSION {activeSession.week_number} · IN PROGRESS
           </div>
           <div className="font-bold text-lg">
-            {new Date(activeWeek.date + 'T12:00:00').toLocaleDateString('en-US', {
+            {new Date(activeSession.date + 'T12:00:00').toLocaleDateString('en-US', {
               weekday: 'long', month: 'long', day: 'numeric',
             })}
           </div>

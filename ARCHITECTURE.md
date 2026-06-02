@@ -11,16 +11,16 @@ React SPA (Vite) + Vercel serverless API. No traditional backend — all persist
 | Path | Component | Auth | Description |
 |------|-----------|------|-------------|
 | `/` | `Home` | Public | Standings leaderboard + active session card |
-| `/weeks` | `WeekList` | Public | All sessions list |
-| `/weeks/:id` | `WeekDetail` | Public | Session detail: teams, games, player points |
+| `/sessions` | `SessionList` | Public | All sessions list |
+| `/sessions/:id` | `SessionDetail` | Public | Session detail: teams, games, player points |
 | `/active` | `ActiveSession` | Public | Live session view + AI chat interface |
 | `/tournament` | `Tournament` | Public | Tournament bracket |
 | `/rules` | `Rules` | Public | Scoring rules |
 | `/admin/login` | `AdminLogin` | Public | Password gate |
 | `/admin` | `AdminDashboard` | Admin | Session list + links |
 | `/admin/roster` | `AdminRoster` | Admin | Add/deactivate players |
-| `/admin/weeks/new` | `AdminNewWeek` | Admin | 2-step session creation flow |
-| `/admin/weeks/:id` | `AdminWeekManage` | Admin | Manage active session: games, results, departures, per-game exclusions |
+| `/admin/sessions/new` | `AdminNewSession` | Admin | 2-step session creation flow |
+| `/admin/sessions/:id` | `AdminSessionManage` | Admin | Manage active session: games, results, departures, per-game exclusions |
 | `/admin/tournament` | `AdminTournament` | Admin | Seed and run tournament |
 | `/admin/chat` | `AdminChat` | Admin | AI chat (Gemini) for hands-free game logging |
 
@@ -31,8 +31,8 @@ React SPA (Vite) + Vercel serverless API. No traditional backend — all persist
 | Tab | Columns | Notes |
 |-----|---------|-------|
 | `players` | `id, name, active, created_at` | `active` = "true"/"false" string |
-| `weeks` | `id, week_number, date, status, team_size, created_at` | `status`: setup / active / completed / historical |
-| `week_attendees` | `week_id, player_id` | Which players attended each week |
+| `sessions` | `id, week_number, date, status, team_size, created_at` | `status`: setup / active / completed / historical. **Note: tab was formerly named `weeks` — rename manually in Google Sheets.** |
+| `week_attendees` | `week_id, player_id` | Which players attended each session |
 | `teams` | `id, week_id, name` | Color-named teams per week |
 | `team_players` | `team_id, player_id` | Team roster |
 | `games` | `id, week_id, team_a_id, team_b_id, winner_team_id, notes, created_at` | `winner_team_id` null until recorded |
@@ -58,27 +58,27 @@ Implemented in `api/sheets.js` (routing) → `api/_db.js` (Google Sheets logic).
 | `addPlayer` | `name` | Add to roster |
 | `deactivatePlayer` | `id` | Soft-delete |
 | `renamePlayer` | `id, name` | Update player name |
-| `getWeekManageData` | `id` | Single-call snapshot: week + teams + games + departures + exclusions + allPlayers |
-| `getWeeks` | — | All weeks |
-| `getWeek` | `id` | Single week |
-| `createWeek` | `weekNumber, date, teamSize` | Create week in `setup` status |
-| `updateWeekStatus` | `id, status` | Advance week status |
-| `updateWeekDate` | `id, date` | Change week date |
-| `deleteWeek` | `id` | Hard-delete week + all cascading data |
-| `getAttendees` | `weekId` | Attendee player objects |
-| `setAttendees` | `weekId, playerIds` | Replace attendee list |
-| `addPlayerToTeam` | `weekId, teamId, playerId` | Add late-arriving player to team + attendees |
-| `getTeamsForWeek` | `weekId` | Teams with nested players array |
-| `saveTeams` | `weekId, teams` | Replace all teams + rosters for a week |
-| `getGamesForWeek` | `weekId` | All games for week |
-| `addGame` | `weekId, teamAId, teamBId, notes?` | Add unresolved game |
+| `getSessionManageData` | `id` | Single-call snapshot: session + teams + games + departures + exclusions + allPlayers |
+| `getSessions` | — | All sessions |
+| `getSession` | `id` | Single session |
+| `createSession` | `sessionNumber, date, teamSize` | Create session in `setup` status |
+| `updateSessionStatus` | `id, status` | Advance session status |
+| `updateSessionDate` | `id, date` | Change session date |
+| `deleteSession` | `id` | Hard-delete session + all cascading data |
+| `getAttendees` | `sessionId` | Attendee player objects |
+| `setAttendees` | `sessionId, playerIds` | Replace attendee list |
+| `addPlayerToTeam` | `sessionId, teamId, playerId` | Add late-arriving player to team + attendees |
+| `getTeamsForSession` | `sessionId` | Teams with nested players array |
+| `saveTeams` | `sessionId, teams` | Replace all teams + rosters for a session |
+| `getGamesForSession` | `sessionId` | All games for session |
+| `addGame` | `sessionId, teamAId, teamBId, notes?` | Add unresolved game |
 | `recordGameResult` | `gameId, winnerTeamId` | Set winner (null to clear) |
 | `deleteGame` | `gameId` | Hard delete game row |
 | `clearGameResult` | `gameId` | Set winner_team_id to null |
-| `getDepartures` | `weekId` | Departure records |
-| `logDeparture` | `weekId, playerId` | Record player left early |
-| `removeDeparture` | `weekId, playerId` | Undo departure |
-| `getGamePlayerExclusions` | `weekId` | Per-game exclusion records |
+| `getDepartures` | `sessionId` | Departure records |
+| `logDeparture` | `sessionId, playerId` | Record player left early |
+| `removeDeparture` | `sessionId, playerId` | Undo departure |
+| `getGamePlayerExclusions` | `sessionId` | Per-game exclusion records |
 | `excludePlayerFromGame` | `gameId, playerId` | Exclude player from one game |
 | `restorePlayerToGame` | `gameId, playerId` | Remove exclusion |
 | `getStandings` | — | Computed leaderboard |
@@ -111,8 +111,8 @@ Tiebreaker order: points → win rate → sessions attended → name (alpha).
 |------|---------|
 | `src/lib/db.js` | Thin HTTP client — all calls to `/api/sheets` |
 | `src/lib/auth.js` | `login()` / `isAdmin()` via `sessionStorage` |
-| `src/pages/admin/AdminNewWeek.jsx` | 2-step session creation: date/team-count → attendees → team assignment (auto or manual) |
-| `src/pages/admin/AdminWeekManage.jsx` | Active session management: add games, record winners, log departures, per-game player exclusions |
+| `src/pages/admin/AdminNewSession.jsx` | 2-step session creation: date/team-count → attendees → team assignment (auto or manual) |
+| `src/pages/admin/AdminSessionManage.jsx` | Active session management: add games, record winners, log departures, per-game player exclusions |
 | `src/pages/ActiveSession.jsx` | Live view + Gemini AI chat for hands-free logging |
 | `api/_db.js` | All Google Sheets read/write logic |
 | `api/sheets.js` | Action router for `/api/sheets` |

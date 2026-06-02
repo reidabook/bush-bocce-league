@@ -1,16 +1,14 @@
 import { Link, useNavigate } from 'react-router-dom'
 import { logout } from '../../lib/auth'
 import { useEffect, useState } from 'react'
-import { getWeeks, getTournament } from '../../lib/db'
+import { getSessions } from '../../lib/db'
 
 export default function AdminDashboard() {
   const navigate = useNavigate()
-  const [weeks, setWeeks] = useState([])
-  const [tournament, setTournament] = useState(null)
+  const [sessions, setSessions] = useState([])
 
   useEffect(() => {
-    getWeeks().then(setWeeks).catch(console.error)
-    getTournament().then(setTournament).catch(console.error)
+    getSessions().then(setSessions).catch(console.error)
   }, [])
 
   function handleLogout() {
@@ -18,8 +16,7 @@ export default function AdminDashboard() {
     navigate('/')
   }
 
-  const activeWeek = weeks.find((w) => w.status === 'active')
-  const allComplete = weeks.length > 0 && weeks.every((w) => w.status === 'completed' || w.status === 'historical')
+  const activeSession = sessions.find((s) => s.status === 'active')
 
   const tiles = [
     {
@@ -29,24 +26,17 @@ export default function AdminDashboard() {
       desc: 'Add or remove players',
     },
     {
-      to: activeWeek ? `/admin/weeks/${activeWeek.id}` : '/admin/weeks/new',
-      icon: activeWeek ? '🎯' : '➕',
-      label: activeWeek ? `Manage Week ${activeWeek.week_number}` : 'New Session',
-      desc: activeWeek ? 'Record games, close week' : 'Set attendance & generate teams',
-    },
-    {
-      to: '/admin/tournament',
-      icon: '🏆',
-      label: 'Tournament',
-      desc: tournament ? 'Manage bracket' : allComplete ? 'Ready to seed' : 'Finish all weeks first',
-      disabled: !tournament && !allComplete,
+      to: activeSession ? `/admin/sessions/${activeSession.id}` : '/admin/sessions/new',
+      icon: activeSession ? '🎯' : '➕',
+      label: activeSession ? `Manage Session ${activeSession.week_number}` : 'New Session',
+      desc: activeSession ? 'Record games, close session' : 'Set attendance & generate teams',
     },
     {
       to: '/admin/chat',
       icon: '💬',
       label: 'AI Assistant',
-      desc: activeWeek ? 'Log games by talking' : 'Start a session first',
-      disabled: !activeWeek,
+      desc: activeSession ? 'Log games by talking' : 'Start a session first',
+      disabled: !activeSession,
     },
   ]
 
@@ -57,21 +47,21 @@ export default function AdminDashboard() {
         <h1 className="text-2xl font-bold" style={{ color: '#1B2F5E' }}>Admin Panel</h1>
       </div>
 
-      {/* Past weeks quick links */}
-      {weeks.filter((w) => w.status !== 'active').length > 0 && (
+      {/* Past sessions quick links */}
+      {sessions.filter((s) => s.status !== 'active').length > 0 && (
         <div>
-          <div className="text-xs font-bold uppercase tracking-widest opacity-40 mb-2">Past Weeks</div>
+          <div className="text-xs font-bold uppercase tracking-widest opacity-40 mb-2">Past Sessions</div>
           <div className="flex gap-2 flex-wrap">
-            {weeks
-              .filter((w) => w.status !== 'active')
-              .map((w) => (
+            {sessions
+              .filter((s) => s.status !== 'active')
+              .map((s) => (
                 <Link
-                  key={w.id}
-                  to={`/admin/weeks/${w.id}`}
+                  key={s.id}
+                  to={`/admin/sessions/${s.id}`}
                   className="text-xs px-3 py-1 rounded-full border font-medium"
                   style={{ borderColor: '#1B2F5E', color: '#1B2F5E' }}
                 >
-                  Week {w.week_number}
+                  Session {s.week_number}
                 </Link>
               ))}
           </div>
