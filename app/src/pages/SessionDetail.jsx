@@ -1,35 +1,32 @@
 import { useEffect, useState } from 'react'
 import { useParams, Link } from 'react-router-dom'
-import { getWeek, getTeamsForWeek, getGamesForWeek, getDepartures } from '../lib/db'
+import { getSession, getTeamsForSession, getGamesForSession, getDepartures } from '../lib/db'
 import Spinner from '../components/Spinner'
 import { isAdmin } from '../lib/auth'
 
-export default function WeekDetail() {
+export default function SessionDetail() {
   const { id } = useParams()
-  const [week, setWeek] = useState(null)
+  const [session, setSession] = useState(null)
   const [teams, setTeams] = useState([])
   const [games, setGames] = useState([])
+  const [departures, setDepartures] = useState([])
   const [loading, setLoading] = useState(true)
   const [error, setError] = useState(null)
   const admin = isAdmin()
 
-  const [departures, setDepartures] = useState([])
-
   useEffect(() => {
-    Promise.all([getWeek(id), getTeamsForWeek(id), getGamesForWeek(id), getDepartures(id)])
-      .then(([w, t, g, d]) => { setWeek(w); setTeams(t); setGames(g); setDepartures(d) })
+    Promise.all([getSession(id), getTeamsForSession(id), getGamesForSession(id), getDepartures(id)])
+      .then(([s, t, g, d]) => { setSession(s); setTeams(t); setGames(g); setDepartures(d) })
       .catch((e) => setError(e.message))
       .finally(() => setLoading(false))
   }, [id])
 
   if (loading) return <Spinner />
   if (error) return <p className="text-red-600 text-sm">{error}</p>
-  if (!week) return null
+  if (!session) return null
 
-  // Build a quick lookup: teamId → team object
   const teamMap = Object.fromEntries(teams.map((t) => [t.id, t]))
 
-  // Build departure lookup: playerId → { departed_at, leftAfterLabel }
   const departureMap = {}
   departures.forEach((d) => {
     const depMs = new Date(d.departed_at).getTime()
@@ -45,20 +42,20 @@ export default function WeekDetail() {
       {/* Header */}
       <div>
         <div className="text-xs font-bold uppercase tracking-widest opacity-40 mb-1">
-          Week {week.week_number}
+          Session {session.week_number}
         </div>
         <h1 className="text-2xl font-bold" style={{ color: '#1B2F5E' }}>
-          {new Date(week.date + 'T12:00:00').toLocaleDateString('en-US', {
+          {new Date(session.date + 'T12:00:00').toLocaleDateString('en-US', {
             weekday: 'long', month: 'long', day: 'numeric',
           })}
         </h1>
         {admin && (
           <Link
-            to={`/admin/weeks/${week.id}`}
+            to={`/admin/sessions/${session.id}`}
             className="inline-block mt-2 text-sm px-3 py-1 rounded-lg text-white"
             style={{ backgroundColor: '#1B2F5E' }}
           >
-            ⚙ Manage this week
+            ⚙ Manage this session
           </Link>
         )}
       </div>

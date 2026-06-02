@@ -1,5 +1,5 @@
 import { useEffect, useRef, useState } from 'react'
-import { getWeeks, getTeamsForWeek, getGamesForWeek, getDepartures } from '../../lib/db'
+import { getSessions, getTeamsForSession, getGamesForSession, getDepartures } from '../../lib/db'
 import Spinner from '../../components/Spinner'
 
 const WELCOME = "Hey! I'm your bocce assistant. Tell me what happened — like \"Red beat Blue\" or \"log Red vs Green\"."
@@ -23,15 +23,15 @@ export default function AdminChat() {
 
   async function loadContext() {
     try {
-      const weeks = await getWeeks()
-      const active = weeks.find((w) => w.status === 'active')
+      const sessions = await getSessions()
+      const active = sessions.find((w) => w.status === 'active')
       if (!active) {
         setWeekCtx(null)
         return
       }
       const [teams, games, departures] = await Promise.all([
-        getTeamsForWeek(active.id),
-        getGamesForWeek(active.id),
+        getTeamsForSession(active.id),
+        getGamesForSession(active.id),
         getDepartures(active.id),
       ])
       setWeekCtx({ week: active, teams, games, departures })
@@ -94,7 +94,7 @@ export default function AdminChat() {
         </h1>
         {weekCtx && (
           <div className="text-xs opacity-40 mt-0.5">
-            Week {weekCtx.week.week_number} · {weekCtx.teams.length} teams · {weekCtx.games.length} games logged
+            Session {weekCtx.week.week_number} · {weekCtx.teams.length} teams · {weekCtx.games.length} games logged
             {weekCtx.departures?.length > 0 && ` · ${weekCtx.departures.length} left early`}
           </div>
         )}

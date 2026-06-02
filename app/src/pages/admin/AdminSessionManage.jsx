@@ -2,13 +2,13 @@ import { useEffect, useState } from 'react'
 import { useParams, useNavigate } from 'react-router-dom'
 import {
   getWeekManageData,
-  addGame, recordGameResult, deleteGame, updateWeekStatus, updateWeekDate, deleteWeek,
+  addGame, recordGameResult, deleteGame, updateSessionStatus, updateSessionDate, deleteSession,
   logDeparture, removeDeparture, addPlayerToTeam,
   excludePlayerFromGame, restorePlayerToGame,
 } from '../../lib/db'
 import Spinner from '../../components/Spinner'
 
-export default function AdminWeekManage() {
+export default function AdminSessionManage() {
   const { id } = useParams()
   const navigate = useNavigate()
   const [week, setWeek] = useState(null)
@@ -34,7 +34,7 @@ export default function AdminWeekManage() {
   // Single API call: fetches week, teams, games, departures, exclusions, allPlayers
   async function reload() {
     const data = await getWeekManageData(id)
-    setWeek(data.week)
+    setWeek(data.session)
     setTeams(data.teams)
     setGames(data.games)
     setDepartures(data.departures)
@@ -99,7 +99,7 @@ export default function AdminWeekManage() {
     const pending = games.filter((g) => !g.winner_team_id).length
     if (pending > 0 && !confirm(`${pending} game(s) still have no result. Close the week anyway?`)) return
     try {
-      await updateWeekStatus(id, 'completed')
+      await updateSessionStatus(id, 'completed')
       navigate('/admin')
     } catch (e) {
       setError(e.message)
@@ -108,7 +108,7 @@ export default function AdminWeekManage() {
 
   async function handleReopenWeek() {
     try {
-      await updateWeekStatus(id, 'active')
+      await updateSessionStatus(id, 'active')
       await reload()
     } catch (e) {
       setError(e.message)
@@ -152,7 +152,7 @@ export default function AdminWeekManage() {
     if (!dateInput) return
     setSavingDate(true)
     try {
-      await updateWeekDate(id, dateInput)
+      await updateSessionDate(id, dateInput)
       setEditingDate(false)
       await reload()
     } catch (e) {
@@ -163,9 +163,9 @@ export default function AdminWeekManage() {
   }
 
   async function handleDeleteWeek() {
-    if (!confirm(`Delete Week ${week?.week_number}? This permanently removes all teams, games, and results for this week.`)) return
+    if (!confirm(`Delete Session ${week?.week_number}? This permanently removes all teams, games, and results for this session.`)) return
     try {
-      await deleteWeek(id)
+      await deleteSession(id)
       navigate('/admin')
     } catch (e) {
       setError(e.message)
@@ -196,7 +196,7 @@ export default function AdminWeekManage() {
       <div>
         <div className="text-xs font-bold uppercase tracking-widest opacity-40 mb-1">Admin</div>
         <h1 className="text-2xl font-bold" style={{ color: '#1B2F5E' }}>
-          Week {week?.week_number}
+          Session {week?.week_number}
         </h1>
         <div className="text-sm opacity-50 mt-1">
           {editingDate ? (
@@ -545,7 +545,7 @@ export default function AdminWeekManage() {
           className="w-full py-4 rounded-xl border text-sm font-medium opacity-50 hover:opacity-100"
           style={{ borderColor: '#ef4444', color: '#ef4444' }}
         >
-          Delete Week
+          Delete Session
         </button>
       </div>
     </div>

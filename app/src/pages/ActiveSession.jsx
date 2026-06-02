@@ -1,8 +1,8 @@
 import { useEffect, useState } from 'react'
 import {
-  getWeeks,
-  getTeamsForWeek,
-  getGamesForWeek,
+  getSessions,
+  getTeamsForSession,
+  getGamesForSession,
   getDepartures,
   getGamePlayerExclusions,
   excludePlayerFromGame,
@@ -84,13 +84,13 @@ export default function ActiveSession() {
 
   async function load() {
     try {
-      const weeks = await getWeeks()
-      const active = weeks.find((w) => w.status === 'active')
+      const sessions = await getSessions()
+      const active = sessions.find((w) => w.status === 'active')
       if (!active) { setSessionData(null); return }
 
       const [teams, games, departures, exclusions] = await Promise.all([
-        getTeamsForWeek(active.id),
-        getGamesForWeek(active.id),
+        getTeamsForSession(active.id),
+        getGamesForSession(active.id),
         getDepartures(active.id),
         getGamePlayerExclusions(active.id),
       ])
@@ -171,7 +171,7 @@ export default function ActiveSession() {
       <div>
         <div className="text-xs font-bold uppercase tracking-widest opacity-40 mb-1">Live</div>
         <h1 className="text-2xl font-bold" style={{ color: '#1B2F5E' }}>
-          Week {week.week_number} · Active Session
+          Session {week.week_number} · Active
         </h1>
         <div className="text-sm opacity-50">{dateStr}</div>
       </div>

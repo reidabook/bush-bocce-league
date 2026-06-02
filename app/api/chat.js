@@ -1,5 +1,5 @@
 import {
-  getGamesForWeek,
+  getGamesForSession,
   addGame,
   recordGameResult,
   deleteGame,
@@ -206,7 +206,7 @@ async function executeTool(name, args, ctx) {
 
   // Always fetch fresh games to avoid stale state across agentic loop turns
   // (ctx.games is a snapshot from the original request; add_game adds to DB but not ctx)
-  const games = await getGamesForWeek(week.id)
+  const games = await getGamesForSession(week.id)
 
   const teamByName = Object.fromEntries(teams.map((t) => [t.name.toLowerCase(), t]))
 
@@ -347,7 +347,7 @@ function buildSystemPrompt(ctx) {
   return `You are a helpful assistant for Bush League Bocce, a neighborhood bocce league in the Oakhurst area. You help the league commissioner log games and results conversationally.
 
 CURRENT SESSION:
-Week ${week.week_number} — ${date}
+Session ${week.week_number} — ${date}
 
 TEAMS (use these exact names when calling tools):
 ${teamList}

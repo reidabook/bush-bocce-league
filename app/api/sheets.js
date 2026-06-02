@@ -24,61 +24,61 @@ export default async function handler(req, res) {
         result = null
         break
       case 'addPlayerToTeam':
-        await db.addPlayerToTeam(params.weekId, params.teamId, params.playerId)
+        await db.addPlayerToTeam(params.sessionId, params.teamId, params.playerId)
         result = null
         break
 
-      // Weeks
-      case 'getWeeks':
-        result = await db.getWeeks()
+      // Sessions
+      case 'getSessions':
+        result = await db.getSessions()
         break
-      case 'getWeek':
-        result = await db.getWeek(params.id)
+      case 'getSession':
+        result = await db.getSession(params.id)
         break
-      case 'createWeek':
-        result = await db.createWeek(params.weekNumber, params.date, params.teamSize)
+      case 'createSession':
+        result = await db.createSession(params.sessionNumber, params.date, params.teamSize)
         break
-      case 'updateWeekStatus':
-        await db.updateWeekStatus(params.id, params.status)
+      case 'updateSessionStatus':
+        await db.updateSessionStatus(params.id, params.status)
         result = null
         break
-      case 'updateWeekDate':
-        await db.updateWeekDate(params.id, params.date)
+      case 'updateSessionDate':
+        await db.updateSessionDate(params.id, params.date)
         result = null
         break
-      case 'deleteWeek':
-        await db.deleteWeek(params.id)
+      case 'deleteSession':
+        await db.deleteSession(params.id)
         result = null
         break
 
-      case 'getWeekManageData':
-        result = await db.getWeekManageData(params.id)
+      case 'getSessionManageData':
+        result = await db.getSessionManageData(params.id)
         break
 
       // Attendance
       case 'getAttendees':
-        result = await db.getAttendees(params.weekId)
+        result = await db.getAttendees(params.sessionId)
         break
       case 'setAttendees':
-        await db.setAttendees(params.weekId, params.playerIds)
+        await db.setAttendees(params.sessionId, params.playerIds)
         result = null
         break
 
       // Teams
-      case 'getTeamsForWeek':
-        result = await db.getTeamsForWeek(params.weekId)
+      case 'getTeamsForSession':
+        result = await db.getTeamsForSession(params.sessionId)
         break
       case 'saveTeams':
-        await db.saveTeams(params.weekId, params.teams)
+        await db.saveTeams(params.sessionId, params.teams)
         result = null
         break
 
       // Games
-      case 'getGamesForWeek':
-        result = await db.getGamesForWeek(params.weekId)
+      case 'getGamesForSession':
+        result = await db.getGamesForSession(params.sessionId)
         break
       case 'addGame':
-        result = await db.addGame(params.weekId, params.teamAId, params.teamBId, params.notes)
+        result = await db.addGame(params.sessionId, params.teamAId, params.teamBId, params.notes)
         break
       case 'recordGameResult':
         await db.recordGameResult(params.gameId, params.winnerTeamId)
@@ -95,20 +95,20 @@ export default async function handler(req, res) {
 
       // Departures
       case 'getDepartures':
-        result = await db.getDepartures(params.weekId)
+        result = await db.getDepartures(params.sessionId)
         break
       case 'logDeparture':
-        await db.logDeparture(params.weekId, params.playerId)
+        await db.logDeparture(params.sessionId, params.playerId)
         result = null
         break
       case 'removeDeparture':
-        await db.removeDeparture(params.weekId, params.playerId)
+        await db.removeDeparture(params.sessionId, params.playerId)
         result = null
         break
 
       // Game player exclusions
       case 'getGamePlayerExclusions':
-        result = await db.getGamePlayerExclusions(params.weekId)
+        result = await db.getGamePlayerExclusions(params.sessionId)
         break
       case 'excludePlayerFromGame':
         await db.excludePlayerFromGame(params.gameId, params.playerId)

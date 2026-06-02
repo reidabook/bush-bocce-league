@@ -111,9 +111,9 @@ export async function renamePlayer(id, name) {
   invalidate('players')
 }
 
-// ─── Weeks ────────────────────────────────────────────────────────────────────
+// ─── Sessions ────────────────────────────────────────────────────────────────────
 
-function parseWeek(obj) {
+function parseSession(obj) {
   return {
     ...obj,
     week_number: parseInt(obj.week_number) || 0,
@@ -121,20 +121,20 @@ function parseWeek(obj) {
   }
 }
 
-export async function getWeeks() {
-  const r = await getRows('weeks')
-  return r.map(toObj).map(parseWeek).sort((a, b) => a.week_number - b.week_number)
+export async function getSessions() {
+  const r = await getRows('sessions')
+  return r.map(toObj).map(parseSession).sort((a, b) => a.week_number - b.week_number)
 }
 
-export async function getWeek(id) {
-  const r = await getRows('weeks')
+export async function getSession(id) {
+  const r = await getRows('sessions')
   const row = r.find((row) => row.get('id') === id)
-  if (!row) throw new Error(`Week not found: ${id}`)
-  return parseWeek(toObj(row))
+  if (!row) throw new Error(`Session not found: ${id}`)
+  return parseSession(toObj(row))
 }
 
-export async function createWeek(weekNumber, date, teamSize) {
-  const s = await sheet('weeks')
+export async function createSession(weekNumber, date, teamSize) {
+  const s = await sheet('sessions')
   const id = crypto.randomUUID()
   const created_at = new Date().toISOString()
   await s.addRow({
@@ -145,31 +145,31 @@ export async function createWeek(weekNumber, date, teamSize) {
     status: 'setup',
     created_at,
   })
-  invalidate('weeks')
+  invalidate('sessions')
   return { id, week_number: weekNumber, date, team_size: teamSize, status: 'setup', created_at }
 }
 
-export async function updateWeekStatus(id, status) {
-  const r = await getRows('weeks')
+export async function updateSessionStatus(id, status) {
+  const r = await getRows('sessions')
   const row = r.find((row) => row.get('id') === id)
-  if (!row) throw new Error(`Week not found: ${id}`)
+  if (!row) throw new Error(`Session not found: ${id}`)
   row.set('status', status)
   await row.save()
-  invalidate('weeks')
+  invalidate('sessions')
 }
 
-export async function updateWeekDate(id, date) {
-  const r = await getRows('weeks')
+export async function updateSessionDate(id, date) {
+  const r = await getRows('sessions')
   const row = r.find((row) => row.get('id') === id)
-  if (!row) throw new Error(`Week not found: ${id}`)
+  if (!row) throw new Error(`Session not found: ${id}`)
   row.set('date', date)
   await row.save()
-  invalidate('weeks')
+  invalidate('sessions')
 }
 
-export async function deleteWeek(id) {
+export async function deleteSession(id) {
   const [weekRows, attendeeRows, teamRows, tpRows, gameRows, depRows, exclRows] = await Promise.all([
-    getRows('weeks'), getRows('week_attendees'), getRows('teams'), getRows('team_players'),
+    getRows('sessions'), getRows('week_attendees'), getRows('teams'), getRows('team_players'),
     getRows('games'), getRows('player_departures'), getRows('game_player_exclusions'),
   ])
   const weekGameIds = new Set(gameRows.filter((r) => r.get('week_id') === id).map((r) => r.get('id')))
@@ -180,10 +180,10 @@ export async function deleteWeek(id) {
   await Promise.all(tpRows.filter((r) => weekTeamIds.has(r.get('team_id'))).map((r) => r.delete()))
   await Promise.all(teamRows.filter((r) => r.get('week_id') === id).map((r) => r.delete()))
   await Promise.all(attendeeRows.filter((r) => r.get('week_id') === id).map((r) => r.delete()))
-  const weekRow = weekRows.find((r) => r.get('id') === id)
-  if (!weekRow) throw new Error(`Week not found: ${id}`)
-  await weekRow.delete()
-  invalidate('weeks', 'week_attendees', 'teams', 'team_players', 'games', 'player_departures', 'game_player_exclusions')
+  const sessionRow = weekRows.find((r) => r.get('id') === id)
+  if (!sessionRow) throw new Error(`Session not found: ${id}`)
+  await sessionRow.delete()
+  invalidate('sessions', 'week_attendees', 'teams', 'team_players', 'games', 'player_departures', 'game_player_exclusions')
 }
 
 // ─── Attendance ───────────────────────────────────────────────────────────────
@@ -211,7 +211,7 @@ export async function setAttendees(weekId, playerIds) {
 
 // ─── Teams ────────────────────────────────────────────────────────────────────
 
-export async function getTeamsForWeek(weekId) {
+export async function getTeamsForSession(weekId) {
   const [teamRows, tpRows, playerRows] = await Promise.all([
     getRows('teams'),
     getRows('team_players'),
@@ -261,7 +261,7 @@ function normalizeGame(obj) {
   return { ...obj, winner_team_id: obj.winner_team_id || null, notes: obj.notes || null }
 }
 
-export async function getGamesForWeek(weekId) {
+export async function getGamesForSession(weekId) {
   const r = await getRows('games')
   return r
     .map(toObj)
@@ -393,11 +393,11 @@ export async function restorePlayerToGame(gameId, playerId) {
   invalidate('game_player_exclusions')
 }
 
-// ─── Week manage snapshot (all data in one serverless call) ──────────────────
+// ─── Session manage snapshot (all data in one serverless call) ───────────────
 
-export async function getWeekManageData(weekId) {
+export async function getSessionManageData(weekId) {
   const [weekRows, teamRows, tpRows, playerRows, gameRows, depRows, exclRows] = await Promise.all([
-    getRows('weeks'),
+    getRows('sessions'),
     getRows('teams'),
     getRows('team_players'),
     getRows('players'),
@@ -406,9 +406,9 @@ export async function getWeekManageData(weekId) {
     getRows('game_player_exclusions'),
   ])
 
-  const weekRow = weekRows.find((r) => r.get('id') === weekId)
-  if (!weekRow) throw new Error(`Week not found: ${weekId}`)
-  const week = parseWeek(toObj(weekRow))
+  const sessionRow = weekRows.find((r) => r.get('id') === weekId)
+  if (!sessionRow) throw new Error(`Session not found: ${weekId}`)
+  const session = parseSession(toObj(sessionRow))
 
   const playerMap = Object.fromEntries(playerRows.map(toObj).map((p) => [p.id, p]))
   const allPlayers = playerRows.map(toObj)
@@ -449,7 +449,7 @@ export async function getWeekManageData(weekId) {
 
   const exclusions = exclRows.map(toObj).filter((e) => gameIds.has(e.game_id))
 
-  return { week, teams, games, departures, exclusions, allPlayers }
+  return { session, teams, games, departures, exclusions, allPlayers }
 }
 
 // ─── Standings ────────────────────────────────────────────────────────────────
@@ -458,7 +458,7 @@ export async function getStandings() {
   const [playerRows, weekRows, gameRows, tpRows, depRows, exclRows, attendeeRows, histRows] =
     await Promise.all([
       getRows('players'),
-      getRows('weeks'),
+      getRows('sessions'),
       getRows('games'),
       getRows('team_players'),
       getRows('player_departures'),
