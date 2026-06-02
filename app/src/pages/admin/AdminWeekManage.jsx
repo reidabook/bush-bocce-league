@@ -4,6 +4,7 @@ import {
   getWeek, getTeamsForWeek, getGamesForWeek,
   addGame, recordGameResult, deleteGame, updateWeekStatus,
   getDepartures, logDeparture, removeDeparture,
+  getGamePlayerExclusions, excludePlayerFromGame, restorePlayerToGame,
 } from '../../lib/db'
 import Spinner from '../../components/Spinner'
 
@@ -20,13 +21,24 @@ export default function AdminWeekManage() {
   const [gameNotes, setGameNotes] = useState('')
   const [addingGame, setAddingGame] = useState(false)
   const [selectedTeams, setSelectedTeams] = useState([])
+  const [exclusions, setExclusions] = useState({}) // gameId → Set<playerId>
 
   async function reload() {
-    const [w, t, g, d] = await Promise.all([getWeek(id), getTeamsForWeek(id), getGamesForWeek(id), getDepartures(id)])
+    const [w, t, g, d, excl] = await Promise.all([
+      getWeek(id), getTeamsForWeek(id), getGamesForWeek(id),
+      getDepartures(id), getGamePlayerExclusions(id),
+    ])
     setWeek(w)
     setTeams(t)
     setGames(g)
     setDepartures(d)
+    // Build gameId → Set<playerId>
+    const map = {}
+    excl.forEach(({ game_id, player_id }) => {
+      if (!map[game_id]) map[game_id] = new Set()
+      map[game_id].add(player_id)
+    })
+    setExclusions(map)
   }
 
   useEffect(() => {
@@ -96,6 +108,20 @@ export default function AdminWeekManage() {
   async function handleRemoveDeparture(playerId) {
     try {
       await removeDeparture(id, playerId)
+      await reload()
+    } catch (e) {
+      setError(e.message)
+    }
+  }
+
+  async function handleToggleExclusion(gameId, playerId) {
+    try {
+      const excluded = exclusions[gameId]?.has(playerId)
+      if (excluded) {
+        await restorePlayerToGame(gameId, playerId)
+      } else {
+        await excludePlayerFromGame(gameId, playerId)
+      }
       await reload()
     } catch (e) {
       setError(e.message)
@@ -305,6 +331,48 @@ export default function AdminWeekManage() {
                       </div>
                     </div>
                   )}
+
+                  {/* Per-game player exclusions — for late arrivals / early leavers per game */}
+                  {week?.status !== 'completed' && (() => {
+                    const gamePlayers = [
+                      ...(teamA.players ?? []),
+                      ...(teamB.players ?? []),
+                    ]
+                    if (gamePlayers.length === 0) return null
+                    const gameExcl = exclusions[game.id] ?? new Set()
+                    const hasExclusions = gameExcl.size > 0
+                    return (
+                      <details className="mt-2" open={hasExclusions}>
+                        <summary className="text-xs opacity-40 cursor-pointer select-none hover:opacity-70">
+                          Player exceptions{hasExclusions ? ` (${gameExcl.size} excluded)` : ''}
+                        </summary>
+                        <div className="mt-1.5 flex flex-wrap gap-1.5">
+                          {gamePlayers.map((p) => {
+                            const isExcluded = gameExcl.has(p.id)
+                            return (
+                              <button
+                                key={p.id}
+                                onClick={() => handleToggleExclusion(game.id, p.id)}
+                                className="px-2 py-0.5 rounded text-xs font-medium border transition-colors"
+                                style={{
+                                  borderColor: isExcluded ? '#fca5a5' : '#e5e7eb',
+                                  backgroundColor: isExcluded ? '#fef2f2' : '#f9fafb',
+                                  color: isExcluded ? '#ef4444' : '#6b7280',
+                                  textDecoration: isExcluded ? 'line-through' : 'none',
+                                }}
+                                title={isExcluded ? 'Tap to include in this game' : 'Tap to exclude from this game'}
+                              >
+                                {p.name}
+                              </button>
+                            )
+                          })}
+                        </div>
+                        <p className="text-xs opacity-30 mt-1">
+                          Excluded players won't earn points for this game.
+                        </p>
+                      </details>
+                    )
+                  })()}
                 </div>
               )
             })}
