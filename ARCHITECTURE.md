@@ -62,6 +62,8 @@ Implemented in `api/sheets.js` (routing) → `api/_db.js` (Google Sheets logic).
 | `getWeek` | `id` | Single week |
 | `createWeek` | `weekNumber, date, teamSize` | Create week in `setup` status |
 | `updateWeekStatus` | `id, status` | Advance week status |
+| `updateWeekDate` | `id, date` | Change week date |
+| `deleteWeek` | `id` | Hard-delete week + all cascading data |
 | `getAttendees` | `weekId` | Attendee player objects |
 | `setAttendees` | `weekId, playerIds` | Replace attendee list |
 | `getTeamsForWeek` | `weekId` | Teams with nested players array |

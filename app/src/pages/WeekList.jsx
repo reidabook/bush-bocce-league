@@ -7,6 +7,7 @@ const statusLabel = {
   setup: { text: 'Setting up', color: '#89B4D0' },
   active: { text: 'In Progress', color: '#16a34a' },
   completed: { text: 'Completed', color: '#6b7280' },
+  historical: { text: 'Completed', color: '#6b7280' },
 }
 
 export default function WeekList() {

@@ -21,13 +21,20 @@ Two modes:
 | Mode | Behaviour |
 |------|-----------|
 | Auto | Random shuffle distributed round-robin across N teams. Swap button cycles a player to the next team (`(fromTeamIndex + 1) % numTeams`). |
-| Manual | Commissioner assigns each player to a team via buttons. |
+| Manual | Commissioner assigns each player to a team via numbered buttons (Team 1, Team 2, …). |
+
+Team names are auto-assigned from the captain: alphabetically-first player on each team becomes captain, team is named `"{FirstName}'s Team"`. Captain names update live in auto mode as players are reshuffled or swapped.
 
 Locking teams saves the week (status → `active`) and navigates to the week manage page.
 
 ---
 
 ## Week management (`/admin/weeks/:id`)
+
+### Header
+- Displays week number, date, and status badge.
+- **Edit date:** tap the "Edit date" link next to the date to open an inline date picker with Save/Cancel.
+- **Delete Week:** red button at the bottom — permanently removes the week and all cascading data (attendees, teams, games, departures, exclusions). Requires confirmation.
 
 ### Teams panel
 Lists all teams with their players. Each player has a **"left"** button to log an early departure, or **"undo"** if already departed. Departed players are shown struck-through and faded.
@@ -56,7 +63,7 @@ Marks status `completed`; points are now counted in standings. Warns if any game
 |-------|------|
 | `weeks` | One row per session |
 | `week_attendees` | One row per player per session |
-| `teams` | One row per team |
+| `teams` | One row per team; `name` = captain's first name + "'s Team" |
 | `team_players` | One row per player per team |
 | `games` | One row per game |
 | `player_departures` | One row per departure event |
@@ -70,3 +77,4 @@ Marks status `completed`; points are now counted in standings. Warns if any game
 - **Player joins late:** add them to the team as normal; use "Player exceptions" in each game they *didn't* play to exclude them from those games' points.
 - **Player leaves early:** use the "left" button in the Teams panel. All games recorded after that timestamp will not count for them.
 - **3-team round-robin:** each game, select the two playing teams. The third team's players automatically earn 0 for that game (they're not in `team_a_id` or `team_b_id`).
+- **Captain name collision:** if two teams have players with the same first name as alphabetical leader, both teams will display the same name. They are still uniquely identified by ID; rename a player in the roster to resolve.

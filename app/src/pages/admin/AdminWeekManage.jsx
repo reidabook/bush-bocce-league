@@ -2,7 +2,7 @@ import { useEffect, useState } from 'react'
 import { useParams, useNavigate } from 'react-router-dom'
 import {
   getWeek, getTeamsForWeek, getGamesForWeek,
-  addGame, recordGameResult, deleteGame, updateWeekStatus,
+  addGame, recordGameResult, deleteGame, updateWeekStatus, updateWeekDate, deleteWeek,
   getDepartures, logDeparture, removeDeparture,
   getGamePlayerExclusions, excludePlayerFromGame, restorePlayerToGame,
 } from '../../lib/db'
@@ -23,6 +23,10 @@ export default function AdminWeekManage() {
   const [selectedTeams, setSelectedTeams] = useState([])
   const [exclusions, setExclusions] = useState({}) // gameId → Set<playerId>
 
+  const [editingDate, setEditingDate] = useState(false)
+  const [dateInput, setDateInput] = useState('')
+  const [savingDate, setSavingDate] = useState(false)
+
   async function reload() {
     const [w, t, g, d, excl] = await Promise.all([
       getWeek(id), getTeamsForWeek(id), getGamesForWeek(id),
@@ -32,7 +36,6 @@ export default function AdminWeekManage() {
     setTeams(t)
     setGames(g)
     setDepartures(d)
-    // Build gameId → Set<playerId>
     const map = {}
     excl.forEach(({ game_id, player_id }) => {
       if (!map[game_id]) map[game_id] = new Set()
@@ -137,6 +140,31 @@ export default function AdminWeekManage() {
     }
   }
 
+  async function handleUpdateDate(e) {
+    e.preventDefault()
+    if (!dateInput) return
+    setSavingDate(true)
+    try {
+      await updateWeekDate(id, dateInput)
+      setEditingDate(false)
+      await reload()
+    } catch (e) {
+      setError(e.message)
+    } finally {
+      setSavingDate(false)
+    }
+  }
+
+  async function handleDeleteWeek() {
+    if (!confirm(`Delete Week ${week?.week_number}? This permanently removes all teams, games, and results for this week.`)) return
+    try {
+      await deleteWeek(id)
+      navigate('/admin')
+    } catch (e) {
+      setError(e.message)
+    }
+  }
+
   if (loading) return <Spinner />
 
   const teamMap = Object.fromEntries(teams.map((t) => [t.id, t]))
@@ -148,12 +176,50 @@ export default function AdminWeekManage() {
         <h1 className="text-2xl font-bold" style={{ color: '#1B2F5E' }}>
           Week {week?.week_number}
         </h1>
-        <div className="text-sm opacity-50">
-          {week && new Date(week.date + 'T12:00:00').toLocaleDateString('en-US', {
-            weekday: 'long', month: 'long', day: 'numeric',
-          })}
-          {week?.status === 'completed' && (
-            <span className="ml-2 text-xs font-bold text-green-600">· Completed</span>
+        <div className="text-sm opacity-50 mt-0.5">
+          {editingDate ? (
+            <form onSubmit={handleUpdateDate} className="flex items-center gap-2">
+              <input
+                type="date"
+                value={dateInput}
+                onChange={(e) => setDateInput(e.target.value)}
+                autoFocus
+                className="px-2 py-1 rounded border text-sm outline-none focus:ring-2"
+                style={{ borderColor: '#e5e7eb' }}
+              />
+              <button
+                type="submit"
+                disabled={savingDate || !dateInput}
+                className="text-xs font-medium disabled:opacity-40"
+                style={{ color: '#1B2F5E' }}
+              >
+                Save
+              </button>
+              <button
+                type="button"
+                onClick={() => setEditingDate(false)}
+                className="text-xs text-gray-400 hover:text-gray-600"
+              >
+                Cancel
+              </button>
+            </form>
+          ) : (
+            <span className="flex items-center gap-2">
+              <span>
+                {week && new Date(week.date + 'T12:00:00').toLocaleDateString('en-US', {
+                  weekday: 'long', month: 'long', day: 'numeric',
+                })}
+                {week?.status === 'completed' && (
+                  <span className="ml-2 text-xs font-bold text-green-600">· Completed</span>
+                )}
+              </span>
+              <button
+                onClick={() => { setDateInput(week?.date ?? ''); setEditingDate(true) }}
+                className="text-xs text-blue-400 hover:text-blue-600"
+              >
+                Edit date
+              </button>
+            </span>
           )}
         </div>
       </div>
@@ -332,7 +398,7 @@ export default function AdminWeekManage() {
                     </div>
                   )}
 
-                  {/* Per-game player exclusions — for late arrivals / early leavers per game */}
+                  {/* Per-game player exclusions */}
                   {week?.status !== 'completed' && (() => {
                     const gamePlayers = [
                       ...(teamA.players ?? []),
@@ -381,7 +447,7 @@ export default function AdminWeekManage() {
       )}
 
       {/* Close / reopen week */}
-      <div className="pt-2">
+      <div className="pt-2 space-y-2">
         {week?.status === 'completed' ? (
           <button
             onClick={handleReopenWeek}
@@ -400,6 +466,13 @@ export default function AdminWeekManage() {
             Close Week & Finalize Points ✓
           </button>
         )}
+        <button
+          onClick={handleDeleteWeek}
+          className="w-full py-3 rounded-xl border text-sm font-medium opacity-50 hover:opacity-100"
+          style={{ borderColor: '#ef4444', color: '#ef4444' }}
+        >
+          Delete Week
+        </button>
       </div>
     </div>
   )
