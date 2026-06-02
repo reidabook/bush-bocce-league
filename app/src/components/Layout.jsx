@@ -9,7 +9,6 @@ export default function Layout({ children }) {
     { to: '/', label: 'Standings' },
     { to: '/active', label: 'Active' },
     { to: '/weeks', label: 'Weeks' },
-    { to: '/tournament', label: 'Tournament' },
     { to: '/rules', label: 'Rules' },
   ]
 
