@@ -30,39 +30,6 @@ export default function Rules() {
         </div>
       </Section>
 
-      <Section title="End of Season">
-        <div className="space-y-2">
-          <div className="flex items-start gap-3">
-            <span className="text-xl">🥇</span>
-            <div>
-              <div className="font-bold text-sm">1st Place</div>
-              <div className="text-sm opacity-60">Glory + winner tee shirt</div>
-            </div>
-          </div>
-          <div className="flex items-start gap-3">
-            <span className="text-xl">🥈</span>
-            <div>
-              <div className="font-bold text-sm">2nd Place</div>
-              <div className="text-sm opacity-60">Glory + winner tee shirt</div>
-            </div>
-          </div>
-          <div className="flex items-start gap-3">
-            <span className="text-xl">🥉</span>
-            <div>
-              <div className="font-bold text-sm">3rd Place</div>
-              <div className="text-sm opacity-60">Glory + winner tee shirt</div>
-            </div>
-          </div>
-          <div className="flex items-start gap-3 pt-1">
-            <span className="text-xl">🎉</span>
-            <div>
-              <div className="font-bold text-sm">Everyone Else</div>
-              <div className="text-sm opacity-60">Plan and sponsor the end-of-season party</div>
-            </div>
-          </div>
-        </div>
-      </Section>
-
       <Section title="The Vibe">
         <div
           className="rounded-xl p-4 text-white text-sm space-y-1"

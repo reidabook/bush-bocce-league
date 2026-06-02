@@ -269,7 +269,7 @@ export default function AdminWeekManage() {
                 {team.players.map((p) => {
                   const hasDeparted = departedIds.has(p.id)
                   return (
-                    <div key={p.id} className="flex items-center gap-2 min-h-[44px]">
+                    <div key={p.id} className="flex items-center gap-2 min-h-[52px] py-1">
                       <span
                         className="text-sm flex-1 leading-tight"
                         style={{
@@ -283,7 +283,7 @@ export default function AdminWeekManage() {
                         hasDeparted ? (
                           <button
                             onClick={() => handleRemoveDeparture(p.id)}
-                            className="flex-shrink-0 px-3 py-1.5 rounded-lg text-xs font-medium"
+                            className="flex-shrink-0 px-3 py-3 rounded-xl text-xs font-semibold min-h-[44px] flex items-center"
                             style={{ backgroundColor: '#f0f4ff', color: '#1B2F5E' }}
                           >
                             Undo
@@ -291,10 +291,10 @@ export default function AdminWeekManage() {
                         ) : (
                           <button
                             onClick={() => handleLogDeparture(p.id)}
-                            className="flex-shrink-0 px-3 py-1.5 rounded-lg text-xs font-medium"
+                            className="flex-shrink-0 px-3 py-3 rounded-xl text-xs font-semibold min-h-[44px] flex items-center"
                             style={{ backgroundColor: '#fef2f2', color: '#ef4444' }}
                           >
-                            Left
+                            Left early
                           </button>
                         )
                       )}
