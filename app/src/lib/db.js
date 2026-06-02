@@ -26,6 +26,7 @@ async function call(action, params = {}) {
 export async function getPlayers() { return call('getPlayers') }
 export async function addPlayer(name) { return call('addPlayer', { name }) }
 export async function deactivatePlayer(id) { return call('deactivatePlayer', { id }) }
+export async function renamePlayer(id, name) { return call('renamePlayer', { id, name }) }
 
 // ─── Weeks ───────────────────────────────────────────────────────────────────
 

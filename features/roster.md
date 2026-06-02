@@ -7,8 +7,8 @@ The commissioner manages the master player list at `/admin/roster`. Players are 
 ## Behaviour
 
 - **Add player:** enter name, tap Add. Player is immediately active and available for attendance selection.
+- **Edit player name:** tap Edit on any row to enter an inline input; Save commits the rename, Cancel discards it.
 - **Deactivate player:** soft-delete — sets `active = false`. Player no longer appears in attendance pickers or standings. Historical stats are preserved.
-- No player editing (name changes) via UI — edit the Google Sheet directly if needed.
 
 ## Data
 
