@@ -113,7 +113,6 @@ export default function Home() {
                   >
                     <td className="px-4 py-3 font-bold opacity-30 w-8">{i + 1}</td>
                     <td className="px-4 py-3 font-medium">
-                      {i === 0 && <span className="mr-1">🏆</span>}
                       {player.name}
                     </td>
                     <td
