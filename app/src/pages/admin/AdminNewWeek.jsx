@@ -59,7 +59,7 @@ export default function AdminNewWeek() {
   }
 
   function swapPlayer(player, fromTeamIndex) {
-    const toTeamIndex = fromTeamIndex === 0 ? 1 : 0
+    const toTeamIndex = (fromTeamIndex + 1) % teams.length
     setTeams((prev) => {
       const next = prev.map((t) => ({ ...t, players: [...t.players] }))
       next[fromTeamIndex].players = next[fromTeamIndex].players.filter((p) => p.id !== player.id)
@@ -238,7 +238,7 @@ export default function AdminNewWeek() {
       {/* Step 2: Auto mode — review generated teams */}
       {step === 2 && mode === 'auto' && (
         <div className="space-y-4">
-          <div className="text-xs opacity-40">{selected.size} players · 2 teams</div>
+          <div className="text-xs opacity-40">{selected.size} players · {teamCount} teams</div>
 
           <div className={`grid gap-2 ${teams.length === 2 ? 'grid-cols-2' : 'grid-cols-1'}`}>
             {teams.map((team, i) => (

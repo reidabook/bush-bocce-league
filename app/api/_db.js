@@ -361,11 +361,22 @@ export async function getStandings() {
       .map((e) => `${e.game_id}:${e.player_id}`)
   )
 
+  // Build week_id → date map so we can deduplicate by calendar date.
+  // Two week entries on the same date (e.g. a session that split then merged teams)
+  // should count as ONE session attended, not two.
+  const weekDateMap = {}
+  allWeeks.forEach((w) => { weekDateMap[w.id] = w.date })
+
   const sessionCount = {}
+  const sessionDates = {} // player_id → Set<date>
   attendeeRows.map(toObj).forEach((a) => {
     if (completedWeekIds.has(a.week_id) || historicalWeekIds.has(a.week_id)) {
-      sessionCount[a.player_id] = (sessionCount[a.player_id] || 0) + 1
+      if (!sessionDates[a.player_id]) sessionDates[a.player_id] = new Set()
+      sessionDates[a.player_id].add(weekDateMap[a.week_id] ?? a.week_id)
     }
+  })
+  Object.entries(sessionDates).forEach(([pid, dates]) => {
+    sessionCount[pid] = dates.size
   })
 
   function departed(weekId, playerId, gameCreatedAt) {
