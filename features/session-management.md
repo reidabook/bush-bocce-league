@@ -16,11 +16,12 @@ Multiple sessions can share the same calendar date (e.g. when teams re-form mid-
 - Check off tonight's attendees from the roster
 
 **Step 2 — Team assignment**
-Two modes:
+Three modes:
 
 | Mode | Behaviour |
 |------|-----------|
-| Auto | Random shuffle distributed round-robin across N teams. Swap button cycles a player to the next team (`(fromTeamIndex + 1) % numTeams`). |
+| Random | Fisher-Yates shuffle, distributed round-robin across N teams. Swap button cycles a player to the next team. |
+| Balanced | Snake draft ordered by current standings (points desc). Rank 1 and rank N land on the same team. New players with no standing are drafted last. |
 | Manual | Commissioner assigns each player to a team via numbered buttons (Team 1, Team 2, …). |
 
 Team names are auto-assigned from the captain: alphabetically-first player on each team becomes captain, team is named `"{FirstName}'s Team"`. Captain names update live in auto mode as players are reshuffled or swapped.
