@@ -1,29 +1,8 @@
 import { useEffect, useState } from 'react'
 import { useNavigate } from 'react-router-dom'
-import { getPlayers, getSessions, createSession, setAttendees, saveTeams, updateSessionStatus } from '../../lib/db'
+import { getPlayers, getSessions, getStandings, createSession, setAttendees, saveTeams, updateSessionStatus } from '../../lib/db'
+import { buildTeams, buildBalancedTeams } from '../../lib/teamUtils'
 import Spinner from '../../components/Spinner'
-
-function shuffle(arr) {
-  const a = [...arr]
-  for (let i = a.length - 1; i > 0; i--) {
-    const j = Math.floor(Math.random() * (i + 1));
-    [a[i], a[j]] = [a[j], a[i]]
-  }
-  return a
-}
-
-function captainName(players) {
-  if (!players.length) return 'TBD'
-  const first = [...players].sort((a, b) => a.name.localeCompare(b.name))[0]
-  return `${first.name.split(' ')[0]}'s Team`
-}
-
-function buildTeams(players, n) {
-  const shuffled = shuffle(players)
-  const teams = Array.from({ length: n }, () => ({ players: [] }))
-  shuffled.forEach((p, i) => { teams[i % n].players.push(p) })
-  return teams.map((t) => ({ name: captainName(t.players), players: t.players }))
-}
 
 const TEAM_COLORS = ['#ef4444', '#3b82f6', '#22c55e', '#eab308', '#a855f7', '#f97316']
 
@@ -37,16 +16,20 @@ export default function AdminNewSession() {
 
   const [date, setDate] = useState(new Date().toISOString().split('T')[0])
   const [selected, setSelected] = useState(new Set())
-  const [mode, setMode] = useState('auto') // 'auto' | 'manual'
+  const [mode, setMode] = useState('auto') // 'auto' | 'balanced' | 'manual'
+  const [standingsMap, setStandingsMap] = useState({})
   const [teamCount, setTeamCount] = useState(2)
   const [teams, setTeams] = useState([])
   const [manualAssign, setManualAssign] = useState({}) // playerId -> team index
 
   useEffect(() => {
-    getPlayers()
-      .then((players) => {
+    Promise.all([getPlayers(), getStandings()])
+      .then(([players, standings]) => {
         setAllPlayers(players)
         setSelected(new Set(players.map((p) => p.id)))
+        const map = {}
+        standings.forEach((s) => { map[s.id] = s.points })
+        setStandingsMap(map)
       })
       .catch((e) => setError(e.message))
       .finally(() => setLoading(false))
@@ -81,6 +64,8 @@ export default function AdminNewSession() {
     setError(null)
     if (mode === 'auto') {
       setTeams(buildTeams(attending, teamCount))
+    } else if (mode === 'balanced') {
+      setTeams(buildBalancedTeams(attending, standingsMap, teamCount))
     } else {
       setManualAssign({})
     }
@@ -138,7 +123,7 @@ export default function AdminNewSession() {
           Step {step} of 2
         </div>
         <h1 className="text-2xl font-bold" style={{ color: '#1B2F5E' }}>
-          {step === 1 ? 'New Session' : mode === 'auto' ? 'Review Teams' : 'Assign Teams'}
+          {step === 1 ? 'New Session' : mode === 'manual' ? 'Assign Teams' : 'Review Teams'}
         </h1>
       </div>
 
@@ -209,9 +194,10 @@ export default function AdminNewSession() {
           {/* Mode selector */}
           <div>
             <label className="block text-xs font-bold uppercase tracking-widest opacity-50 mb-2">Team Assignment</label>
-            <div className="grid grid-cols-2 gap-2">
+            <div className="grid grid-cols-3 gap-2">
               {[
-                ['auto', 'Auto', 'Randomly assign'],
+                ['auto', 'Random', 'Shuffled randomly'],
+                ['balanced', 'Balanced', 'By standings rank'],
                 ['manual', 'Manual', 'Pick yourself'],
               ].map(([val, label, sub]) => (
                 <button
@@ -236,13 +222,13 @@ export default function AdminNewSession() {
             className="w-full py-3 rounded-xl text-white text-sm font-medium disabled:opacity-30"
             style={{ backgroundColor: '#1B2F5E' }}
           >
-            {mode === 'auto' ? 'Generate Teams →' : 'Assign Teams →'}
+            {mode === 'manual' ? 'Assign Teams →' : 'Generate Teams →'}
           </button>
         </div>
       )}
 
-      {/* Step 2: Auto mode — review generated teams */}
-      {step === 2 && mode === 'auto' && (
+      {/* Step 2: Auto/Balanced mode — review generated teams */}
+      {step === 2 && mode !== 'manual' && (
         <div className="space-y-4">
           <div className="text-xs opacity-40">{selected.size} players · {teamCount} teams</div>
 
@@ -267,11 +253,14 @@ export default function AdminNewSession() {
           </div>
 
           <button
-            onClick={() => setTeams(buildTeams(attending, teamCount))}
+            onClick={() => {
+              if (mode === 'balanced') setTeams(buildBalancedTeams(attending, standingsMap, teamCount))
+              else setTeams(buildTeams(attending, teamCount))
+            }}
             className="w-full py-2 rounded-xl border text-sm font-medium"
             style={{ borderColor: '#1B2F5E', color: '#1B2F5E' }}
           >
-            🔀 Re-shuffle
+            {mode === 'balanced' ? '↻ Re-balance' : '🔀 Re-shuffle'}
           </button>
 
           <div className="flex gap-2">

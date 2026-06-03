@@ -29,6 +29,12 @@
 3. Call out any feature removal/alteration explicitly before proceeding.
 4. Update the relevant `features/*.md` as part of the same commit.
 
+## MANDATORY: Tests
+- Every new feature or bug fix must include a corresponding test in `app/test/`.
+- Run `npm test` before merging to main. Tests must pass — the build (`npm run build`) will also run them, so failing tests block Vercel deploys.
+- Tests live in `app/test/*.test.js` and use Vitest. Pure logic only — no Google Sheets I/O. Mock fixtures go inline in the test file.
+- Run: `node node_modules/vitest/dist/cli.js run` from `app/`.
+
 ## MANDATORY: Keep documentation current
 After every change — no exceptions — update whichever of these are affected:
 - `CLAUDE.md` — stack, env vars, or mandatory rules
