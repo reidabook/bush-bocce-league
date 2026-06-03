@@ -23,10 +23,10 @@ export function buildTeams(players, n) {
   return teams.map((t) => ({ name: captainName(t.players), players: t.players }))
 }
 
-// Balanced: snake draft ordered by standings points (desc).
+// Snake draft ordered by standings points (desc).
 // standingsMap = { [playerId]: points }. Players absent from the map are treated
 // as 0 points and go last in draft order (they pair with a strong player).
-export function buildBalancedTeams(players, standingsMap, n) {
+export function buildSnakeDraftTeams(players, standingsMap, n) {
   const sorted = [...players].sort((a, b) => {
     const pa = standingsMap[a.id] ?? -Infinity
     const pb = standingsMap[b.id] ?? -Infinity

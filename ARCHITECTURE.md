@@ -109,8 +109,8 @@ Tiebreaker order: points → win rate → name (alpha).
 |------|---------|
 | `src/lib/db.js` | Thin HTTP client — all calls to `/api/sheets` |
 | `src/lib/auth.js` | `login()` / `isAdmin()` via `sessionStorage` |
-| `src/lib/teamUtils.js` | Pure team-building: `buildTeams` (random), `buildBalancedTeams` (snake draft) |
-| `src/pages/admin/AdminNewSession.jsx` | 2-step session creation: date/team-count → attendees → team assignment (random/balanced/manual) |
+| `src/lib/teamUtils.js` | Pure team-building: `buildTeams` (random), `buildSnakeDraftTeams` (snake draft) |
+| `src/pages/admin/AdminNewSession.jsx` | 2-step session creation: date/team-count → attendees → team assignment (random/snake/manual) |
 | `src/pages/admin/AdminSessionManage.jsx` | Active session management: add games, record winners, log departures, per-game player exclusions |
 | `src/pages/ActiveSession.jsx` | Live view + Gemini AI chat for hands-free logging |
 | `api/_db.js` | All Google Sheets read/write logic |
@@ -131,7 +131,7 @@ Red Team · Blue Team · Green Team · Yellow Team · Purple Team · Orange Team
 | File | What it tests |
 |------|--------------|
 | `test/standings.test.js` | `computeStandings`: basic scoring, exclusions, departures, historical stats, sort order |
-| `test/teamUtils.test.js` | `buildTeams` (random), `buildBalancedTeams` (snake draft), `shuffle` |
+| `test/teamUtils.test.js` | `buildTeams` (random), `buildSnakeDraftTeams` (snake draft), `shuffle` |
 
 Run: `node node_modules/vitest/dist/cli.js run` from `app/`  
 The `npm run build` script runs tests first — failing tests block Vercel deploys.

@@ -1,5 +1,5 @@
 import { describe, it, expect } from 'vitest'
-import { shuffle, buildTeams, buildBalancedTeams } from '../src/lib/teamUtils.js'
+import { shuffle, buildTeams, buildSnakeDraftTeams } from '../src/lib/teamUtils.js'
 
 // ─── Fixtures ─────────────────────────────────────────────────────────────────
 
@@ -73,20 +73,20 @@ describe('buildTeams (random)', () => {
   })
 })
 
-// ─── buildBalancedTeams ───────────────────────────────────────────────────────
+// ─── buildSnakeDraftTeams ───────────────────────────────────────────────────────
 
-describe('buildBalancedTeams (snake draft)', () => {
+describe('buildSnakeDraftTeams', () => {
   it('creates the correct number of teams', () => {
     const players = makePlayers(6)
     const map = { p1: 100, p2: 80, p3: 60, p4: 40, p5: 20, p6: 0 }
-    expect(buildBalancedTeams(players, map, 2)).toHaveLength(2)
-    expect(buildBalancedTeams(players, map, 3)).toHaveLength(3)
+    expect(buildSnakeDraftTeams(players, map, 2)).toHaveLength(2)
+    expect(buildSnakeDraftTeams(players, map, 3)).toHaveLength(3)
   })
 
   it('assigns every player to exactly one team', () => {
     const players = makePlayers(6)
     const map = { p1: 100, p2: 80, p3: 60, p4: 40, p5: 20, p6: 0 }
-    const teams = buildBalancedTeams(players, map, 2)
+    const teams = buildSnakeDraftTeams(players, map, 2)
     const assigned = teams.flatMap((t) => t.players.map((p) => p.id))
     expect(assigned.sort()).toEqual(players.map((p) => p.id).sort())
   })
@@ -105,7 +105,7 @@ describe('buildBalancedTeams (snake draft)', () => {
       { id: 'p4', name: 'Delta' },
     ]
     const map = { p1: 100, p2: 75, p3: 50, p4: 10 }
-    const teams = buildBalancedTeams(players, map, 2)
+    const teams = buildSnakeDraftTeams(players, map, 2)
     const team0Ids = teams[0].players.map((p) => p.id).sort()
     const team1Ids = teams[1].players.map((p) => p.id).sort()
     // rank1 (p1) and rank4 (p4) should be on the same team
@@ -122,7 +122,7 @@ describe('buildBalancedTeams (snake draft)', () => {
       { id: 'p_new', name: 'Newbie' },
     ]
     const map = { p1: 100, p2: 50 } // p_new absent
-    const teams = buildBalancedTeams(players, map, 3)
+    const teams = buildSnakeDraftTeams(players, map, 3)
     // 3 players, 3 teams: each gets one player
     // Snake: pick0→T0(p1), pick1→T1(p2), pick2→T2(p_new)
     const newbieTeam = teams.find((t) => t.players.some((p) => p.id === 'p_new'))
@@ -142,7 +142,7 @@ describe('buildBalancedTeams (snake draft)', () => {
       { id: 'r6', name: 'R6' }, // rank 6 → T0
     ]
     const map = { r1: 100, r2: 80, r3: 60, r4: 40, r5: 20, r6: 0 }
-    const teams = buildBalancedTeams(players, map, 3)
+    const teams = buildSnakeDraftTeams(players, map, 3)
     const ids = (t) => t.players.map((p) => p.id).sort()
     expect(ids(teams[0]).sort()).toEqual(['r1', 'r6'].sort())
     expect(ids(teams[1]).sort()).toEqual(['r2', 'r5'].sort())
@@ -152,7 +152,7 @@ describe('buildBalancedTeams (snake draft)', () => {
   it('each team has a name', () => {
     const players = makePlayers(4)
     const map = { p1: 10, p2: 8, p3: 5, p4: 2 }
-    const teams = buildBalancedTeams(players, map, 2)
+    const teams = buildSnakeDraftTeams(players, map, 2)
     teams.forEach((t) => expect(t.name.length).toBeGreaterThan(0))
   })
 })
