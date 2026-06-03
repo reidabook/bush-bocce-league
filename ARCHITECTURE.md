@@ -99,9 +99,7 @@ Also: `GET /api/debug` (connection check), `GET /api/init-sheets` (create sheet 
 - **0** if player's team DNP (team not in that game)
 - **0** if player departed before game's `created_at`
 - **0** if player has a `game_player_exclusions` record for that game
-- **Sessions Attended** = count of **unique dates** across completed + historical weeks where the player is an attendee (deduplicates same-date double-entries)
-
-Tiebreaker order: points → win rate → sessions attended → name (alpha).
+Tiebreaker order: points → win rate → name (alpha).
 
 ---
 

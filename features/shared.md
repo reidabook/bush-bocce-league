@@ -12,13 +12,9 @@
 
 **Win total = 4, Loss total = 1.**
 
-## Sessions attended
-
-Counts the number of **unique calendar dates** across all completed + historical weeks where the player appears in `week_attendees`. Same-date entries (e.g. two week entries on the same night because teams re-formed mid-session) count as **one** session.
-
 ## Standings tiebreaker
 
-Points → win rate (wins / games played) → sessions attended → name (alphabetical).
+Points → win rate (wins / games played) → name (alphabetical).
 
 ## Week status lifecycle
 

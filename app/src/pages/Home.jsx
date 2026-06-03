@@ -101,7 +101,6 @@ export default function Home() {
                   <th className="text-right px-4 py-2 font-medium">PTS</th>
                   <th className="text-right px-4 py-2 font-medium">W</th>
                   <th className="text-right px-4 py-2 font-medium">GP</th>
-                  <th className="text-right px-4 py-2 font-medium">SA</th>
                 </tr>
               </thead>
               <tbody>
@@ -123,13 +122,12 @@ export default function Home() {
                     </td>
                     <td className="px-4 py-3 text-right opacity-60">{player.wins}</td>
                     <td className="px-4 py-3 text-right opacity-60">{player.gamesPlayed}</td>
-                    <td className="px-4 py-3 text-right opacity-60">{player.sessions}</td>
                   </tr>
                 ))}
               </tbody>
             </table>
             <div className="px-4 py-2 text-xs opacity-30 border-t">
-              PTS = Points · W = Wins · GP = Games Played · SA = Sessions Attended
+              PTS = Points · W = Wins · GP = Games Played
             </div>
           </div>
         )}

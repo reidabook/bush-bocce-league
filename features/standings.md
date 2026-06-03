@@ -13,7 +13,6 @@ Live leaderboard shown on the home page (`/`). Computed on every load from raw g
 | PTS | Total points |
 | W | Wins |
 | GP | Games played |
-| SA | Sessions attended (unique dates) |
 
 ## Computation (`getStandings` in `api/_db.js`)
 
@@ -21,12 +20,11 @@ Live leaderboard shown on the home page (`/`). Computed on every load from raw g
 2. For each completed game, credit all players on both teams with +1 (play point) and winners with +3 (win points), **excluding** players who:
    - Had a `player_departures` record for that week with `departed_at` before the game's `created_at`
    - Have a `game_player_exclusions` record for that specific game
-3. Sessions attended = number of unique dates across completed + historical weeks where the player is in `week_attendees`.
-4. Add pre-computed stats from `historical_player_stats` for any `historical`-status weeks.
+3. Add pre-computed stats from `historical_player_stats` for any `historical`-status weeks.
 
 ## Tiebreaker
 
-Points → win rate (wins ÷ games played, 0 if no games) → sessions attended → name alphabetical.
+Points → win rate (wins ÷ games played, 0 if no games) → name alphabetical.
 
 ## Historical weeks
 
