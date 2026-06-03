@@ -1,7 +1,7 @@
 import { useEffect, useState } from 'react'
 import { useNavigate } from 'react-router-dom'
 import { getPlayers, getSessions, getStandings, createSession, setAttendees, saveTeams, updateSessionStatus } from '../../lib/db'
-import { buildTeams, buildBalancedTeams } from '../../lib/teamUtils'
+import { buildTeams, buildSnakeDraftTeams } from '../../lib/teamUtils'
 import Spinner from '../../components/Spinner'
 
 const TEAM_COLORS = ['#ef4444', '#3b82f6', '#22c55e', '#eab308', '#a855f7', '#f97316']
@@ -16,7 +16,7 @@ export default function AdminNewSession() {
 
   const [date, setDate] = useState(new Date().toISOString().split('T')[0])
   const [selected, setSelected] = useState(new Set())
-  const [mode, setMode] = useState('auto') // 'auto' | 'balanced' | 'manual'
+  const [mode, setMode] = useState('auto') // 'auto' | 'snake' | 'manual'
   const [standingsMap, setStandingsMap] = useState({})
   const [teamCount, setTeamCount] = useState(2)
   const [teams, setTeams] = useState([])
@@ -64,8 +64,8 @@ export default function AdminNewSession() {
     setError(null)
     if (mode === 'auto') {
       setTeams(buildTeams(attending, teamCount))
-    } else if (mode === 'balanced') {
-      setTeams(buildBalancedTeams(attending, standingsMap, teamCount))
+    } else if (mode === 'snake') {
+      setTeams(buildSnakeDraftTeams(attending, standingsMap, teamCount))
     } else {
       setManualAssign({})
     }
@@ -197,7 +197,7 @@ export default function AdminNewSession() {
             <div className="grid grid-cols-3 gap-2">
               {[
                 ['auto', 'Random', 'Shuffled randomly'],
-                ['balanced', 'Balanced', 'By standings rank'],
+                ['snake', 'Snake Draft', 'By standings rank'],
                 ['manual', 'Manual', 'Pick yourself'],
               ].map(([val, label, sub]) => (
                 <button
@@ -227,7 +227,7 @@ export default function AdminNewSession() {
         </div>
       )}
 
-      {/* Step 2: Auto/Balanced mode — review generated teams */}
+      {/* Step 2: Auto/Snake Draft mode — review generated teams */}
       {step === 2 && mode !== 'manual' && (
         <div className="space-y-4">
           <div className="text-xs opacity-40">{selected.size} players · {teamCount} teams</div>
@@ -254,13 +254,13 @@ export default function AdminNewSession() {
 
           <button
             onClick={() => {
-              if (mode === 'balanced') setTeams(buildBalancedTeams(attending, standingsMap, teamCount))
+              if (mode === 'snake') setTeams(buildSnakeDraftTeams(attending, standingsMap, teamCount))
               else setTeams(buildTeams(attending, teamCount))
             }}
             className="w-full py-2 rounded-xl border text-sm font-medium"
             style={{ borderColor: '#1B2F5E', color: '#1B2F5E' }}
           >
-            {mode === 'balanced' ? '↻ Re-balance' : '🔀 Re-shuffle'}
+            {mode === 'snake' ? '↻ Re-draft' : '🔀 Re-shuffle'}
           </button>
 
           <div className="flex gap-2">
