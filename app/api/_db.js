@@ -455,7 +455,7 @@ export async function getSessionManageData(weekId) {
 // ─── Standings ────────────────────────────────────────────────────────────────
 
 export async function getStandings() {
-  const [playerRows, weekRows, gameRows, tpRows, depRows, exclRows, attendeeRows, histRows] =
+  const [playerRows, weekRows, gameRows, tpRows, depRows, exclRows, histRows] =
     await Promise.all([
       getRows('players'),
       getRows('sessions'),
@@ -463,7 +463,6 @@ export async function getStandings() {
       getRows('team_players'),
       getRows('player_departures'),
       getRows('game_player_exclusions'),
-      getRows('week_attendees'),
       getRows('historical_player_stats'),
     ])
 
@@ -507,24 +506,6 @@ export async function getStandings() {
       .map((e) => `${e.game_id}:${e.player_id}`)
   )
 
-  // Build week_id → date map so we can deduplicate by calendar date.
-  // Two week entries on the same date (e.g. a session that split then merged teams)
-  // should count as ONE session attended, not two.
-  const weekDateMap = {}
-  allWeeks.forEach((w) => { weekDateMap[w.id] = w.date })
-
-  const sessionCount = {}
-  const sessionDates = {} // player_id → Set<date>
-  attendeeRows.map(toObj).forEach((a) => {
-    if (completedWeekIds.has(a.week_id) || historicalWeekIds.has(a.week_id)) {
-      if (!sessionDates[a.player_id]) sessionDates[a.player_id] = new Set()
-      sessionDates[a.player_id].add(weekDateMap[a.week_id] ?? a.week_id)
-    }
-  })
-  Object.entries(sessionDates).forEach(([pid, dates]) => {
-    sessionCount[pid] = dates.size
-  })
-
   function departed(weekId, playerId, gameCreatedAt) {
     const t = departureMap[weekId]?.[playerId]
     return t !== undefined && t < new Date(gameCreatedAt).getTime()
@@ -538,7 +519,6 @@ export async function getStandings() {
       points: 0,
       wins: 0,
       gamesPlayed: 0,
-      sessions: sessionCount[p.id] || 0,
     }
   })
 
@@ -583,7 +563,6 @@ export async function getStandings() {
     const aRate = a.gamesPlayed ? a.wins / a.gamesPlayed : 0
     const bRate = b.gamesPlayed ? b.wins / b.gamesPlayed : 0
     if (bRate !== aRate) return bRate - aRate
-    if (b.sessions !== a.sessions) return b.sessions - a.sessions
     return a.name.localeCompare(b.name)
   })
 }
