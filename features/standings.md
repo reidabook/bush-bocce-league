@@ -8,11 +8,14 @@ Live leaderboard shown on the home page (`/`). Computed on every load from raw g
 
 | Column | Description |
 |--------|-------------|
-| Rank | Position in sorted standings |
+| Rank | Position in current sort order |
 | Name | Player name |
 | PTS | Total points |
 | W | Wins |
 | GP | Games played |
+| W% | Win percentage (wins ÷ games played; `—` if no games; formatted as `.750`) |
+
+PTS, W, GP, and W% column headers are clickable to sort ascending or descending. Default sort: PTS descending. The rank column reflects the current sort order.
 
 ## Computation (`getStandings` in `api/_db.js`)
 
