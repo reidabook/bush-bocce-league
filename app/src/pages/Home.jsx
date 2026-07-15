@@ -3,6 +3,11 @@ import { Link } from 'react-router-dom'
 import { getStandings, getSessions } from '../lib/db'
 import Spinner from '../components/Spinner'
 
+export function fmtWinPct(wins, gamesPlayed) {
+  if (gamesPlayed === 0) return '—'
+  return (wins / gamesPlayed).toFixed(3).replace(/^0/, '')
+}
+
 export default function Home() {
   const [standings, setStandings] = useState([])
   const [activeSession, setActiveSession] = useState(null)
@@ -10,6 +15,8 @@ export default function Home() {
   const [error, setError] = useState(null)
   const [initializing, setInitializing] = useState(false)
   const [initResult, setInitResult] = useState(null)
+  const [sortCol, setSortCol] = useState('pts')
+  const [sortDir, setSortDir] = useState('desc')
 
   useEffect(() => {
     Promise.all([getStandings(), getSessions()])
@@ -35,6 +42,28 @@ export default function Home() {
       setInitializing(false)
     }
   }
+
+  function handleSort(col) {
+    if (sortCol === col) {
+      setSortDir((d) => (d === 'desc' ? 'asc' : 'desc'))
+    } else {
+      setSortCol(col)
+      setSortDir('desc')
+    }
+  }
+
+  const sorted = [...standings].sort((a, b) => {
+    let diff
+    if (sortCol === 'pts') diff = b.points - a.points
+    else if (sortCol === 'w') diff = b.wins - a.wins
+    else if (sortCol === 'gp') diff = b.gamesPlayed - a.gamesPlayed
+    else if (sortCol === 'pct') {
+      const aP = a.gamesPlayed ? a.wins / a.gamesPlayed : 0
+      const bP = b.gamesPlayed ? b.wins / b.gamesPlayed : 0
+      diff = bP - aP
+    }
+    return sortDir === 'desc' ? diff : -diff
+  })
 
   if (loading) return <Spinner />
   if (error) return (
@@ -95,25 +124,35 @@ export default function Home() {
           <div className="bg-white rounded-xl shadow-sm overflow-hidden">
             <table className="w-full text-sm">
               <thead>
-                <tr className="text-xs uppercase tracking-wide opacity-40 border-b">
-                  <th className="text-left px-4 py-2 font-medium">#</th>
-                  <th className="text-left px-4 py-2 font-medium">Player</th>
-                  <th className="text-right px-4 py-2 font-medium">PTS</th>
-                  <th className="text-right px-4 py-2 font-medium">W</th>
-                  <th className="text-right px-4 py-2 font-medium">GP</th>
+                <tr className="text-xs uppercase tracking-wide border-b">
+                  <th className="text-left px-4 py-2 font-medium opacity-40">#</th>
+                  <th className="text-left px-4 py-2 font-medium opacity-40">Player</th>
+                  {[
+                    { col: 'pts', label: 'PTS' },
+                    { col: 'w', label: 'W' },
+                    { col: 'gp', label: 'GP' },
+                    { col: 'pct', label: 'W%' },
+                  ].map(({ col, label }) => (
+                    <th
+                      key={col}
+                      className="text-right px-4 py-2 font-medium cursor-pointer select-none"
+                      style={{ color: sortCol === col ? '#1B2F5E' : undefined, opacity: sortCol === col ? 1 : 0.4 }}
+                      onClick={() => handleSort(col)}
+                    >
+                      {label}{sortCol === col ? (sortDir === 'desc' ? ' ↓' : ' ↑') : ''}
+                    </th>
+                  ))}
                 </tr>
               </thead>
               <tbody>
-                {standings.map((player, i) => (
+                {sorted.map((player, i) => (
                   <tr
                     key={player.id}
                     className="border-b last:border-0"
                     style={{ backgroundColor: i === 0 ? '#F5F3EF' : 'white' }}
                   >
                     <td className="px-4 py-3 font-bold opacity-30 w-8">{i + 1}</td>
-                    <td className="px-4 py-3 font-medium">
-                      {player.name}
-                    </td>
+                    <td className="px-4 py-3 font-medium">{player.name}</td>
                     <td
                       className="px-4 py-3 text-right font-bold"
                       style={{ color: '#1B2F5E' }}
@@ -122,12 +161,15 @@ export default function Home() {
                     </td>
                     <td className="px-4 py-3 text-right opacity-60">{player.wins}</td>
                     <td className="px-4 py-3 text-right opacity-60">{player.gamesPlayed}</td>
+                    <td className="px-4 py-3 text-right opacity-60 tabular-nums">
+                      {fmtWinPct(player.wins, player.gamesPlayed)}
+                    </td>
                   </tr>
                 ))}
               </tbody>
             </table>
             <div className="px-4 py-2 text-xs opacity-30 border-t">
-              PTS = Points · W = Wins · GP = Games Played
+              PTS = Points · W = Wins · GP = Games Played · W% = Win %
             </div>
           </div>
         )}

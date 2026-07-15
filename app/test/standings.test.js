@@ -1,5 +1,6 @@
 import { describe, it, expect } from 'vitest'
 import { computeStandings } from '../api/_standingsLogic.js'
+import { fmtWinPct } from '../src/pages/Home.jsx'
 
 // ─── Fixtures ─────────────────────────────────────────────────────────────────
 
@@ -218,6 +219,30 @@ describe('sort order', () => {
     const s = computeStandings({ players: TIE_PLAYERS, sessions: [], games: [], teamPlayers: [], departures: [], exclusions: [], historicalStats: [] })
     expect(s[0].name).toBe('Anna')
     expect(s[1].name).toBe('Zach')
+  })
+})
+
+// ─── Win percentage formatting ────────────────────────────────────────────────
+
+describe('fmtWinPct', () => {
+  it('returns — when no games played', () => {
+    expect(fmtWinPct(0, 0)).toBe('—')
+  })
+
+  it('formats 1.000 correctly', () => {
+    expect(fmtWinPct(3, 3)).toBe('1.000')
+  })
+
+  it('formats .500 correctly (no leading zero)', () => {
+    expect(fmtWinPct(1, 2)).toBe('.500')
+  })
+
+  it('formats .333 correctly', () => {
+    expect(fmtWinPct(1, 3)).toBe('.333')
+  })
+
+  it('formats .000 when no wins', () => {
+    expect(fmtWinPct(0, 5)).toBe('.000')
   })
 })
 
