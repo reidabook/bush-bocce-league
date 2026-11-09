@@ -1,6 +1,7 @@
 import { useState } from 'react'
 import { useNavigate } from 'react-router-dom'
 import { login } from '../../lib/auth'
+import { Button } from '../../components/ui'
 
 export default function AdminLogin() {
   const [password, setPassword] = useState('')
@@ -10,7 +11,7 @@ export default function AdminLogin() {
   function handleSubmit(e) {
     e.preventDefault()
     if (login(password)) {
-      navigate('/admin')
+      navigate('/?commish=1', { replace: true })
     } else {
       setError(true)
       setPassword('')
@@ -18,30 +19,22 @@ export default function AdminLogin() {
   }
 
   return (
-    <div className="max-w-xs mx-auto pt-12">
-      <div className="text-center mb-8">
-        <div className="text-4xl mb-3">⚙</div>
-        <h1 className="text-xl font-bold" style={{ color: '#1B2F5E' }}>Commissioner Login</h1>
-        <p className="text-sm opacity-50 mt-1">Enter the commissioner password to manage the league.</p>
+    <div className="max-w-xs mx-auto pt-8">
+      <div className="text-center mb-7">
+        <img src="/logo-192.png" alt="" className="w-20 h-20 rounded-full mx-auto mb-4 shadow-sm" />
+        <h1 className="font-display font-black text-[34px] leading-none text-brand">Commissioner</h1>
+        <p className="text-[15px] text-muted mt-2">Log in to run sessions and keep score.</p>
       </div>
       <form onSubmit={handleSubmit} className="space-y-3">
-        <input
-          type="password"
-          value={password}
-          onChange={(e) => { setPassword(e.target.value); setError(false) }}
-          placeholder="Password"
-          className="w-full px-4 py-3 rounded-xl border text-sm outline-none focus:ring-2"
-          style={{ borderColor: error ? '#ef4444' : '#e5e7eb', '--tw-ring-color': '#1B2F5E' }}
-          autoFocus
-        />
-        {error && <p className="text-red-500 text-xs text-center">Incorrect password</p>}
-        <button
-          type="submit"
-          className="w-full py-3 rounded-xl text-white font-medium text-sm"
-          style={{ backgroundColor: '#1B2F5E' }}
-        >
-          Enter
-        </button>
+        <label className="block">
+          <span className="sr-only">Password</span>
+          <input type="password" value={password} autoFocus autoComplete="current-password"
+            onChange={(e) => { setPassword(e.target.value); setError(false) }}
+            placeholder="Password" aria-invalid={error} aria-describedby={error ? 'login-error' : undefined}
+            className={`w-full h-14 px-4 rounded-2xl bg-card border text-base outline-none focus:border-sky ${error ? 'border-danger' : 'border-line'}`} />
+        </label>
+        {error && <p id="login-error" className="text-sm text-danger">That password didn't work.</p>}
+        <Button type="submit" size="lg" className="w-full" disabled={!password}>Log in</Button>
       </form>
     </div>
   )

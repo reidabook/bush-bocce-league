@@ -8,6 +8,59 @@ Multiple sessions can share the same calendar date (e.g. when teams re-form mid-
 
 ---
 
+## Sessions list (`/sessions`)
+
+Newest first, grouped by month (year added for older years). Each row: day number + weekday, "Session N", status line (Final / Archived stats / Setting up) or a red **Live** pill for the active session. Rows link to the session (active → `/tonight`). Grouping: `src/lib/sessionGroups.js`.
+
+---
+
+## Session screen (`/sessions/:id`, `/tonight`)
+
+One screen for every session, for everyone (`docs/adr/0001-one-session-screen.md`). `/tonight` shows the active session; with none: "No session tonight" (commissioner gets "Start a session").
+
+- **Header:** active → red Live label, "Tonight", "Session N · date". Otherwise → "Session N" eyebrow, full date, game count.
+- **Teams:** grid of cards (3 across for 3 teams, else 2), team ball + short name, each player with points earned this session. Players who left early are muted with "left after Game N".
+- **Games:** newest first. "N ● Winner beat ● Loser"; pending games show "vs" and an **In play** pill. Notes in small italics.
+- **Footnote (active only):** "Win = 4 pts, loss = 1. Tonight's points join the standings when the session closes."
+- Points per player (`src/lib/sessionStats.js`) follow standings rules. The old separate "Tonight's Score" table (rank/W/GP) was folded into the team cards.
+
+---
+
+## Creation flow (`/admin/sessions/new`)
+
+Full-screen flow (no tab bar). Navy header shows "Step N of 2"; X cancels, ‹ goes back to step 1.
+
+**Step 1 — Who's here?**
+- Date (defaults to today) and number of teams (2 / 3 / 4) side by side.
+- "N of M playing" with **Select all / Clear all**; checkbox rows show each player's season points. Everyone starts checked.
+- Sticky footer: how to split (**Random · Snake draft · Manual**) with a one-line hint, then **Make N teams →** / **Place N players →**. Needs at least one player per team.
+
+**Step 2 — teams**
+
+| Mode | Behaviour |
+|------|-----------|
+| Random | Fisher-Yates shuffle, dealt round-robin. **Reshuffle** deals again. |
+| Snake draft | Draft order by season points (desc); new players last. **Re-draft** rebuilds. |
+| Manual | Each player row has numbered team buttons (1…N); header shows count per team and "N to place". Start is enabled once everyone is placed. |
+
+Random/snake show team cards in ball-color order (ball + captain name + player count). Each player has a "→ ●" button that moves them to the next team (color shown). Captain = alphabetically-first player; team name `"{FirstName}'s Team"`; names update live.
+
+**Lock teams & start** creates the session (number = count + 1), saves attendees and teams, sets status `active`, and opens **Tonight**.
+
+---
+
+## Session screen (`/sessions/:id`, `/tonight`)
+
+One screen for every session, for everyone (`docs/adr/0001-one-session-screen.md`). `/tonight` shows the active session; with none: "No session tonight" (commissioner gets "Start a session").
+
+- **Header:** active → red Live label, "Tonight", "Session N · date". Otherwise → "Session N" eyebrow, full date, game count.
+- **Teams:** grid of cards (3 across for 3 teams, else 2), team ball + short name, each player with points earned this session. Players who left early are muted with "left after Game N".
+- **Games:** newest first. "N ● Winner beat ● Loser"; pending games show "vs" and an **In play** pill. Notes in small italics.
+- **Footnote (active only):** "Win = 4 pts, loss = 1. Tonight's points join the standings when the session closes."
+- Points per player (`src/lib/sessionStats.js`) follow standings rules. The old separate "Tonight's Score" table (rank/W/GP) was folded into the team cards.
+
+---
+
 ## Creation flow (`/admin/weeks/new`)
 
 **Step 1 — Setup**
@@ -30,33 +83,17 @@ Locking teams saves the week (status → `active`) and navigates to the week man
 
 ---
 
-## Week management (`/admin/weeks/:id`)
+## Commissioner controls (on the Session screen)
 
-### Header
-- Displays week number, date, and status badge.
-- **Edit date:** tap the "Edit date" link next to the date to open an inline date picker with Save/Cancel.
-- **Delete Week:** red button at the bottom — permanently removes the week and all cascading data (attendees, teams, games, departures, exclusions). Requires confirmation.
+Same screen as everyone else, plus controls (`src/pages/session/`). `/admin/sessions/:id` redirects to `/sessions/:id`.
 
-### Teams panel
-Lists all teams with their players. Each player row has a **"Left"** button (red pill) to log an early departure, or **"Undo"** (blue pill) to reverse it. Departed players are shown struck-through and faded. All buttons meet 44px minimum touch target.
-
-**Late arrivals:** each team card has a dashed "+ Add late arrival" button when any rostered players are not yet assigned to a team. Tapping it reveals a list of unassigned players; tapping a name adds them to that team and to the week's attendee list.
-
-### Add Game (active weeks only)
-- With 2 teams: no selection needed — always the only two teams.
-- With 3+ teams: commissioner taps two team buttons to select the playing teams before adding the game. The unselected team(s) DNP.
-- Optional notes field.
-- Game is created with no winner.
-
-### Game results
-Each game card shows:
-- Game number, Delete button
-- **If no result:** "Who won?" with a button per team
-- **If result recorded:** winner / loser display with a (clear) button
-- **Player exceptions** (collapsible, active weeks only): all players from both teams listed as tappable chips. Tapping excludes/includes a player from that specific game. Excluded players appear red/strikethrough. Auto-opens if any exclusions exist. Use for: late arrivals who missed specific games.
-
-### Close Week
-Marks status `completed`; points are now counted in standings. Warns if any games lack a result. Completed weeks can be reopened.
+- **Session options (⋯ next to the title):** change date · **Close session** (warns if games have no result; closing adds points to standings) / **Reopen session** · **Delete session** (confirm; removes teams, games, departures, exclusions).
+- **Pending game card** (active sessions): the newest game with no result. "Game N · Who won?" with one big ball button per team; tapping records the winner and shows "Kat's won game 4. Undo" (undo clears the result). Notes which team(s) sit out. Player chips: tap anyone who didn't play this game → per-game exclusion (dashed, struck through); tap again to restore.
+- **Games list:** pencil on every game → sheet with winner buttons (change winner), **Clear result**, player exclusion chips, **Delete game** (confirm).
+- **+ Game** (docked above the tab bar, active sessions): with 2 teams adds a game immediately; with 3+ opens a sheet to pick the two teams (others sit out) + optional note.
+- **Teams & who left early:** sheet listing every team. Per player **Left early** (logs a departure now — no points in later games) or **Undo**. Per team **Add late arrival** when roster players aren't on a team: tap a name to add them to that team and the attendee list.
+- Errors show inline ("That didn't save: …"); actions run one at a time.
+- Completed sessions keep every control except + Game and the pending card.
 
 ---
 
@@ -77,7 +114,7 @@ Marks status `completed`; points are now counted in standings. Warns if any game
 ## Edge cases
 
 - **Same-date sessions:** fully supported — create a second week entry with the same date. Sessions attended counts it as one night (date-deduplicated).
-- **Player joins late:** add them to the team as normal; use "Player exceptions" in each game they *didn't* play to exclude them from those games' points.
-- **Player leaves early:** use the "left" button in the Teams panel. All games recorded after that timestamp will not count for them.
+- **Player joins late:** "Add late arrival" in Teams & who left early; then tap their chip on each game they *didn't* play.
+- **Player leaves early:** "Left early" in Teams & who left early. All games recorded after that timestamp will not count for them.
 - **3-team round-robin:** each game, select the two playing teams. The third team's players automatically earn 0 for that game (they're not in `team_a_id` or `team_b_id`).
 - **Captain name collision:** if two teams have players with the same first name as alphabetical leader, both teams will display the same name. They are still uniquely identified by ID; rename a player in the roster to resolve.

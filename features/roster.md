@@ -6,9 +6,11 @@ The commissioner manages the master player list at `/admin/roster`. Players are 
 
 ## Behaviour
 
-- **Add player:** enter name, tap Add. Player is immediately active and available for attendance selection.
-- **Edit player name:** tap Edit on any row to enter an inline input; Save commits the rename, Cancel discards it.
-- **Deactivate player:** soft-delete — sets `active = false`. Player no longer appears in attendance pickers or standings. Historical stats are preserved.
+Reached from the commissioner menu → Roster. Players listed alphabetically with a count.
+
+- **Add player:** name field + **Add player** at the top. Player is immediately active.
+- **Edit:** tap a row → inline name field with **Save name**, **Cancel**, and **Remove**.
+- **Remove** (deactivate): confirm explains they leave pickers and standings while past games stay on record. Sets `active = false`.
 
 ## Data
 

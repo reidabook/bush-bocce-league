@@ -1,73 +1,65 @@
+import { PageTitle, SectionLabel, Card } from '../components/ui'
+import { Ridge } from '../components/Layout'
+
 export default function Rules() {
   return (
-    <div className="space-y-6 pb-4">
-      <div>
-        <div className="text-xs font-bold uppercase tracking-widest opacity-40 mb-1">
-          Oakhurst Neighborhood
-        </div>
-        <h1 className="text-2xl font-bold" style={{ color: '#1B2F5E' }}>League Rules</h1>
-      </div>
+    <div className="space-y-5 pb-2">
+      <PageTitle title="Rules" meta="Oakhurst · April – October" />
 
-      <Section title="Season">
-        <p>April – October</p>
-      </Section>
-
-      <Section title="Each Session">
-        <ul className="space-y-1">
-          <li>Teams are randomized at the start of every session</li>
-          <li>Play a few games — rotate who throws within your team</li>
-          <li>One team sits out each game and rotates in</li>
-        </ul>
-      </Section>
-
-      <Section title="Scoring">
-        <div className="space-y-3">
-          <ScoreRow pts={1} label="Per game played" sub="Everyone on both teams gets 1 point just for playing" />
-          <ScoreRow pts={3} label="Per game won" sub="Everyone on the winning team gets 3 additional points" />
-          <div className="rounded-lg px-3 py-2 text-xs" style={{ backgroundColor: '#89B4D020', color: '#1B2F5E' }}>
-            Win = <strong>4 pts total</strong> · Loss = <strong>1 pt total</strong>
+      <section>
+        <SectionLabel>Scoring</SectionLabel>
+        <Card className="overflow-hidden">
+          <ScoreRow pts="+1" label="Every game you play" sub="Everyone on both teams." />
+          <ScoreRow pts="+3" label="Every game you win" sub="On top of the +1." />
+          <div className="flex border-t border-hair">
+            <Total big="4" label="Win" />
+            <Total big="1" label="Loss" />
+            <Total big="0" label="Sat out" />
           </div>
-        </div>
-      </Section>
+        </Card>
+      </section>
 
-      <Section title="The Vibe">
-        <div
-          className="rounded-xl p-4 text-white text-sm space-y-1"
-          style={{ backgroundColor: '#1B2F5E' }}
-        >
-          <p>Show up when you can.</p>
-          <p>Drink, have fun, and accumulate points.</p>
-          <p style={{ color: '#89B4D0' }} className="pt-1 text-xs">It's bush league. That's the point.</p>
-        </div>
-      </Section>
-    </div>
-  )
-}
+      <section>
+        <SectionLabel>Each session</SectionLabel>
+        <Card className="p-4">
+          <ul className="space-y-2 text-[15px] leading-snug list-disc pl-5 marker:text-sky">
+            <li>Teams are drawn fresh every session.</li>
+            <li>Play a few games — rotate who throws within your team.</li>
+            <li>With 3+ teams, one sits out each game and rotates in.</li>
+            <li>Leave early or miss a game? You just don't score for it.</li>
+          </ul>
+        </Card>
+      </section>
 
-function Section({ title, children }) {
-  return (
-    <div>
-      <h2 className="text-xs font-bold uppercase tracking-widest opacity-40 mb-3">{title}</h2>
-      <div className="bg-white rounded-xl p-4 shadow-sm text-sm" style={{ color: '#1B2F5E' }}>
-        {children}
-      </div>
+      <section>
+        <SectionLabel>The vibe</SectionLabel>
+        <div className="relative rounded-2xl overflow-hidden text-white px-4 pt-5 pb-9" style={{ backgroundColor: 'var(--navy)' }}>
+          <p className="font-display font-black text-[28px] leading-[1.05]">Show up when you can.<br />Drink, have fun, rack up points.</p>
+          <p className="text-sky text-sm mt-2">It's bush league. That's the point.</p>
+          <Ridge />
+        </div>
+      </section>
     </div>
   )
 }
 
 function ScoreRow({ pts, label, sub }) {
   return (
-    <div className="flex items-start gap-3">
-      <div
-        className="w-10 h-10 rounded-full flex items-center justify-center font-bold text-white flex-shrink-0 text-sm"
-        style={{ backgroundColor: '#1B2F5E' }}
-      >
-        +{pts}
-      </div>
+    <div className="flex items-center gap-4 px-4 py-3 border-t border-hair first:border-t-0">
+      <span className="font-display font-black text-[36px] leading-none text-brand w-14 tabular">{pts}</span>
       <div>
-        <div className="font-medium">{label}</div>
-        <div className="text-xs opacity-50 mt-0.5">{sub}</div>
+        <div className="font-semibold text-base">{label}</div>
+        <div className="text-[13px] text-muted">{sub}</div>
       </div>
+    </div>
+  )
+}
+
+function Total({ big, label }) {
+  return (
+    <div className="flex-1 flex flex-col items-center py-3 border-l border-hair first:border-l-0">
+      <span className="font-display font-black text-2xl text-brand leading-none">{big}</span>
+      <span className="text-[11px] font-bold tracking-[.12em] uppercase text-muted mt-1">{label}</span>
     </div>
   )
 }

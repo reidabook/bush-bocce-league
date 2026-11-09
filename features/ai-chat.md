@@ -2,12 +2,11 @@
 
 ## Overview
 
-Two entry points for Gemini-powered natural language game logging:
+The commissioner logs games in plain language from the **Tonight** screen (`/tonight`, or any active session's `/sessions/:id`). A composer ("“Kat's beat Colin's”") sits in the bottom dock next to **+ Game**. Sending opens an **Assistant** sheet with the conversation; it stays available (chat button in the dock) while you're on the page. When the AI runs any action, the session reloads.
 
-| Route | Component | Context |
-|-------|-----------|---------|
-| `/active` | `ActiveSession` | Public live-session view — shows current teams and a chat box |
-| `/admin/chat` | `AdminChat` | Admin-only chat panel |
+- Component: `src/pages/session/Assistant.jsx`; request building: `src/lib/chatClient.js` (`buildChatRequest` → `{ messages, weekContext: { week, teams, games, departures } }`).
+- Old `/admin/chat` page removed; the route redirects to `/tonight`.
+- Errors show in the conversation: "Couldn't reach the assistant. Try again."
 
 ## What the AI can do
 
@@ -32,4 +31,4 @@ The Gemini function-calling API (`api/chat.js`) exposes these tools:
 
 - The AI is given the current week's teams and games as context on every message.
 - Results are written immediately to Google Sheets via the same `_db.js` functions.
-- `exclude_player_from_game` / `restore_player_to_game` are also now available in the admin UI (see `session-management.md` — Player exceptions).
+- Everything the AI does can also be done by hand on the Session screen (see `session-management.md` — Commissioner controls).

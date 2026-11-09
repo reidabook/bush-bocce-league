@@ -12,17 +12,17 @@ React SPA (Vite) + Vercel serverless API. No traditional backend — all persist
 |------|-----------|------|-------------|
 | `/` | `Home` | Public | Standings leaderboard + active session card |
 | `/sessions` | `SessionList` | Public | All sessions list |
-| `/sessions/:id` | `SessionDetail` | Public | Session detail: teams, games, player points |
-| `/active` | `ActiveSession` | Public | Live session view + AI chat interface |
+| `/sessions/:id` | `Session` | Public (+ commissioner controls) | One Session screen for any session (ADR 0001) |
+| `/tonight` | `Session tonight` | Public (+ commissioner controls) | The active session in the Session screen (`/active` redirects here) |
 | `/tournament` | `Tournament` | Public | Tournament bracket |
 | `/rules` | `Rules` | Public | Scoring rules |
-| `/admin/login` | `AdminLogin` | Public | Password gate |
-| `/admin` | `AdminDashboard` | Admin | Session list + links |
+| `/admin/login` | `AdminLogin` | Public | Commissioner password; success opens the commissioner menu |
+| `/admin` | redirect | Admin | → `/?commish=1` (opens the commissioner menu) |
 | `/admin/roster` | `AdminRoster` | Admin | Add/deactivate players |
 | `/admin/sessions/new` | `AdminNewSession` | Admin | 2-step session creation flow |
-| `/admin/sessions/:id` | `AdminSessionManage` | Admin | Manage active session: games, results, departures, per-game exclusions |
+| `/admin/sessions/:id` | redirect | — | → `/sessions/:id` (commissioner controls live there) |
 | `/admin/tournament` | `AdminTournament` | Admin | Seed and run tournament |
-| `/admin/chat` | `AdminChat` | Admin | AI chat (Gemini) for hands-free game logging |
+| `/admin/chat` | redirect | — | → `/tonight` (assistant is docked there) |
 
 ---
 
@@ -109,10 +109,25 @@ Tiebreaker order: points → win rate → name (alpha).
 |------|---------|
 | `src/lib/db.js` | Thin HTTP client — all calls to `/api/sheets` |
 | `src/lib/auth.js` | `login()` / `isAdmin()` via `sessionStorage` |
-| `src/lib/teamUtils.js` | Pure team-building: `buildTeams` (random), `buildSnakeDraftTeams` (snake draft) |
-| `src/pages/admin/AdminNewSession.jsx` | 2-step session creation: date/team-count → attendees → team assignment (random/snake/manual) |
-| `src/pages/admin/AdminSessionManage.jsx` | Active session management: add games, record winners, log departures, per-game player exclusions |
-| `src/pages/ActiveSession.jsx` | Live view + Gemini AI chat for hands-free logging |
+| `src/lib/standingsSort.js` | `sortStandings`, `nextSort`, `fmtWinPct` |
+| `src/components/ErrorState.jsx` | Shared load-error card (retry, init sheet tabs) |
+| `src/lib/sessionGroups.js` | `groupSessionsByMonth`, `dayParts`, status labels |
+| `src/lib/bracket.js` | `groupByRound`, `roundLabel`, `champion` |
+| `src/lib/teamColors.js` | Team ball color by alphabetical team position (`teamColor`, `teamColorById`) |
+| `src/lib/useActiveSession.js` | Cached active-session lookup for the tab bar live dot |
+| `src/components/Layout.jsx` | Header with ridge edge + bottom tab bar |
+| `src/components/CommishMenu.jsx` | Commissioner sheet: start/go to tonight, roster, tournament, log out |
+| `src/components/ui.jsx`, `Ball.jsx` | Design-system primitives (see `features/design-system.md`) |
+| `src/lib/teamUtils.js` | Pure team-building: `buildTeams` (random), `buildSnakeDraftTeams` (snake draft), `moveToNextTeam`, `teamsFromAssignment`, `captainName` |
+| `src/pages/admin/AdminNewSession.jsx` | Full-screen 2-step flow: who's here (date, teams, attendees, split mode) → teams (random/snake/manual) |
+| `src/pages/session/commish.jsx` | Commissioner controls: pending game card, game/add-game/teams/options sheets |
+| `src/pages/session/Assistant.jsx` | Docked AI assistant composer + conversation sheet |
+| `src/lib/chatClient.js` | `buildChatRequest`, `sendChat` for `/api/chat` |
+| `src/pages/session/useCommish.js` | Commissioner actions (one at a time, reload after) |
+| `src/lib/gameFlow.js` | `pendingGame`, `sittingOut`, `closeWarning`, `gameMatchup`, `unassignedPlayers` |
+| `src/components/Sheet.jsx` | Bottom sheet dialog |
+| `src/pages/Session.jsx` | One Session screen: header, teams w/ per-player points, games newest first |
+| `src/lib/sessionStats.js` | `computeSessionStats`, `departureLabel` |
 | `api/_db.js` | All Google Sheets read/write logic |
 | `api/_standingsLogic.js` | Pure standings computation (`computeStandings`) — no I/O, tested |
 | `api/sheets.js` | Action router for `/api/sheets` |
@@ -131,7 +146,14 @@ Red Team · Blue Team · Green Team · Yellow Team · Purple Team · Orange Team
 | File | What it tests |
 |------|--------------|
 | `test/standings.test.js` | `computeStandings`: basic scoring, exclusions, departures, historical stats, sort order |
-| `test/teamUtils.test.js` | `buildTeams` (random), `buildSnakeDraftTeams` (snake draft), `shuffle` |
+| `test/standingsSort.test.js` | Standings sort by column/direction + tiebreakers |
+| `test/sessionGroups.test.js` | Month grouping, same-date order, year labels |
+| `test/sessionStats.test.js` | Per-session points, exclusions, departures, departure labels |
+| `test/gameFlow.test.js` | Pending game, sit-outs, close warning, matchup, late-arrival candidates |
+| `test/chatClient.test.js` | Chat request context mapping |
+| `test/bracket.test.js` | Round grouping/labels, champion |
+| `test/teamColors.test.js` | Team ball colors: order, wrap, lookup by id |
+| `test/teamUtils.test.js` | `buildTeams`, `buildSnakeDraftTeams`, `shuffle`, `captainName`, `moveToNextTeam`, `teamsFromAssignment` |
 
 Run: `node node_modules/vitest/dist/cli.js run` from `app/`  
 The `npm run build` script runs tests first — failing tests block Vercel deploys.

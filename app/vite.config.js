@@ -14,7 +14,7 @@ export default defineConfig({
         short_name: 'Bush League',
         description: 'Oakhurst Neighborhood Bocce League',
         theme_color: '#1B2F5E',
-        background_color: '#1B2F5E',
+        background_color: '#E8EFF5',
         display: 'standalone',
         start_url: '/',
         icons: [

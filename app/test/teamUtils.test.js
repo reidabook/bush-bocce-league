@@ -156,3 +156,40 @@ describe('buildSnakeDraftTeams', () => {
     teams.forEach((t) => expect(t.name.length).toBeGreaterThan(0))
   })
 })
+
+import { moveToNextTeam, teamsFromAssignment, captainName } from '../src/lib/teamUtils.js'
+
+describe('captainName', () => {
+  it('uses the alphabetically-first first name', () => {
+    expect(captainName([{ name: 'Zed Z' }, { name: 'Amy Q' }])).toBe("Amy's Team")
+    expect(captainName([])).toBe('TBD')
+  })
+})
+
+describe('moveToNextTeam', () => {
+  const teams = [
+    { name: "Al's Team", players: [{ id: 1, name: 'Al' }, { id: 2, name: 'Bo' }] },
+    { name: "Cy's Team", players: [{ id: 3, name: 'Cy' }] },
+  ]
+  it('moves to the next team and renames captains', () => {
+    const r = moveToNextTeam(teams, 1)
+    expect(r[0].players.map((p) => p.id)).toEqual([2])
+    expect(r[1].players.map((p) => p.id)).toEqual([3, 1])
+    expect(r.map((t) => t.name)).toEqual(["Bo's Team", "Al's Team"])
+  })
+  it('wraps from the last team to the first', () => {
+    expect(moveToNextTeam(teams, 3)[0].players.map((p) => p.id)).toEqual([1, 2, 3])
+  })
+  it('ignores unknown players', () => {
+    expect(moveToNextTeam(teams, 99)).toBe(teams)
+  })
+})
+
+describe('teamsFromAssignment', () => {
+  it('builds named teams, skipping unassigned', () => {
+    const ps = [{ id: 1, name: 'Al' }, { id: 2, name: 'Bo' }, { id: 3, name: 'Cy' }]
+    const r = teamsFromAssignment(ps, { 1: 1, 2: 0 }, 2)
+    expect(r.map((t) => t.players.map((p) => p.id))).toEqual([[2], [1]])
+    expect(r[0].name).toBe("Bo's Team")
+  })
+})

@@ -45,3 +45,27 @@ export function buildSnakeDraftTeams(players, standingsMap, n) {
 
   return teams.map((t) => ({ name: captainName(t.players), players: t.players }))
 }
+
+// Move a player to the next team (wrapping) and refresh captain names.
+export function moveToNextTeam(teams, playerId) {
+  const from = teams.findIndex((t) => t.players.some((p) => p.id === playerId))
+  if (from === -1 || teams.length < 2) return teams
+  const to = (from + 1) % teams.length
+  const player = teams[from].players.find((p) => p.id === playerId)
+  return teams.map((t, i) => {
+    let players = t.players
+    if (i === from) players = players.filter((p) => p.id !== playerId)
+    if (i === to) players = [...players, player]
+    return { ...t, players, name: captainName(players) }
+  })
+}
+
+// Manual mode: { playerId: teamIndex } → teams. Unassigned players are left out.
+export function teamsFromAssignment(players, assignment, n) {
+  const teams = Array.from({ length: n }, () => ({ players: [] }))
+  players.forEach((p) => {
+    const i = assignment[p.id]
+    if (i !== undefined && teams[i]) teams[i].players.push(p)
+  })
+  return teams.map((t) => ({ name: captainName(t.players), players: t.players }))
+}

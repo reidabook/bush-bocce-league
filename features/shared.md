@@ -39,7 +39,9 @@ Both exclude the player from points for affected games. Both are reversible.
 
 ## Auth
 
-Commissioner password stored in `VITE_ADMIN_PASSWORD` env var. Checked client-side in `src/lib/auth.js`; result in `sessionStorage`. No server-side auth — all API endpoints are open (Sheets RLS equivalent not enforced).
+Commissioner password stored in `VITE_ADMIN_PASSWORD` env var. Checked client-side in `src/lib/auth.js`; result in `sessionStorage`.
+
+**Entry:** the person icon in the header → `/admin/login` ("Commissioner", password, "Log in"; wrong password: "That password didn't work."). Once logged in, the header shows a **Commissioner** button that opens the commissioner menu: Start a session (or Go to tonight when one is live), Roster, Tournament, Log out. `/admin` opens the same menu. All commissioner controls live inline on the regular screens. No server-side auth — all API endpoints are open (Sheets RLS equivalent not enforced).
 
 ## API pattern
 
