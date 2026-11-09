@@ -90,7 +90,7 @@ Same screen as everyone else, plus controls (`src/pages/session/`). `/admin/sess
 - **Session options (⋯ next to the title):** change date · **Close session** (warns if games have no result; closing adds points to standings) / **Reopen session** · **Delete session** (confirm; removes teams, games, departures, exclusions).
 - **Pending game card** (active sessions): the newest game with no result. "Game N · Who won?" with one big ball button per team; tapping records the winner and shows "Kat's won game 4. Undo" (undo clears the result). Notes which team(s) sit out. Player chips: tap anyone who didn't play this game → per-game exclusion (dashed, struck through); tap again to restore.
 - **Games list:** pencil on every game → sheet with winner buttons (change winner), **Clear result**, player exclusion chips, **Delete game** (confirm).
-- **+ Game** (docked above the tab bar, active sessions): with 2 teams adds a game immediately; with 3+ opens a sheet to pick the two teams (others sit out) + optional note.
+- **+ Game** (in the bar attached to the top of the tab bar, active sessions): with 2 teams adds a game immediately; with 3+ opens a sheet to pick the two teams (others sit out) + optional note.
 - **Teams & who left early:** sheet listing every team. Per player **Left early** (logs a departure now — no points in later games) or **Undo**. Per team **Add late arrival** when roster players aren't on a team: tap a name to add them to that team and the attendee list.
 - Errors show inline ("That didn't save: …"); actions run one at a time.
 - Completed sessions keep every control except + Game and the pending card.

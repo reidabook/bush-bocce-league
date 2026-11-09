@@ -1,4 +1,5 @@
 import { useCallback, useEffect, useState } from 'react'
+import { createPortal } from 'react-dom'
 import { useParams } from 'react-router-dom'
 import { getSessionManageData } from '../lib/db'
 import { fetchSessionsCached } from '../lib/useActiveSession'
@@ -197,14 +198,14 @@ export function SessionView({ data, reload, admin }) {
       {admin && live && (
         <>
           <div className="h-16" aria-hidden="true" />
-          <div className="fixed inset-x-0 z-20 bg-ice/95 backdrop-blur" style={{ bottom: 'calc(62px + max(10px, env(safe-area-inset-bottom)))' }}>
+          <Dock>
             <div className="max-w-lg mx-auto px-3 py-2.5 flex items-center gap-2">
               <Assistant data={data} reload={reload} />
               <Button className="h-12 rounded-full px-4 min-[380px]:px-5 shrink-0" disabled={c.busy || teams.length < 2} onClick={quickAddGame}>
                 <Icon name="plus" size={16} strokeWidth={2.5} /> Game
               </Button>
             </div>
-          </div>
+          </Dock>
         </>
       )}
 
@@ -218,4 +219,12 @@ export function SessionView({ data, reload, admin }) {
       )}
     </div>
   )
+}
+
+// Renders into the Layout's bottom stack, directly above the tab bar.
+function Dock({ children }) {
+  const [slot, setSlot] = useState(null)
+  useEffect(() => { setSlot(document.getElementById('dock-slot')) }, [])
+  if (!slot) return null
+  return createPortal(<div className="bg-ice/95 backdrop-blur border-t border-line">{children}</div>, slot)
 }

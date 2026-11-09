@@ -40,7 +40,7 @@ export default function Assistant({ data, reload }) {
       <Icon name="sparkle" size={18} className="text-muted shrink-0" />
       <input value={input} onChange={(e) => setInput(e.target.value)} autoFocus={autoFocus}
         placeholder="“Kat's beat Colin's”" aria-label="Tell the assistant what happened" enterKeyHint="send"
-        className="flex-1 min-w-0 bg-transparent outline-none text-[15px] font-medium placeholder:text-muted" />
+        className="flex-1 min-w-0 bg-transparent outline-none text-base font-medium placeholder:text-muted" />
       {input.trim() && (
         <button type="submit" disabled={thinking} aria-label="Send"
           className="w-10 h-10 rounded-full bg-[#1B2F5E] text-white dark:bg-sky dark:text-[#0B1530] flex items-center justify-center disabled:opacity-40">

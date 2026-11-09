@@ -1,4 +1,4 @@
-import { useState } from 'react'
+import { useEffect, useState } from 'react'
 import { Link, NavLink, useSearchParams } from 'react-router-dom'
 import CommishMenu from './CommishMenu'
 import { isAdmin } from '../lib/auth'
@@ -36,6 +36,7 @@ export default function Layout({ children }) {
   const active = useActiveSession()
   const [params, setParams] = useSearchParams()
   const [menuOpen, setMenuOpen] = useState(false)
+  const typing = useTyping()
   const menu = admin && (menuOpen || params.get('commish') === '1')
   function closeMenu() {
     setMenuOpen(false)
@@ -68,8 +69,13 @@ export default function Layout({ children }) {
 
       <main className="flex-1 max-w-lg mx-auto w-full px-4 pt-2 pb-28">{children}</main>
 
-      <nav aria-label="Main" className="fixed bottom-0 inset-x-0 z-30 bg-card border-t border-line"
-        style={{ paddingBottom: 'max(10px, env(safe-area-inset-bottom))' }}>
+      {/* Bottom stack: optional page dock (e.g. Tonight's + Game bar) sits on the
+          tab bar so they always move together. Tabs hide while typing so only
+          the dock rides above the on-screen keyboard. */}
+      <div className="fixed bottom-0 inset-x-0 z-30">
+        <div id="dock-slot" />
+        <nav aria-label="Main" hidden={typing} className="bg-card border-t border-line"
+          style={{ paddingBottom: 'max(10px, env(safe-area-inset-bottom))' }}>
         <div className="max-w-lg mx-auto flex px-2">
           {TABS.map((t) => (
             <NavLink key={t.to} to={t.to} end={t.end}
@@ -82,8 +88,23 @@ export default function Layout({ children }) {
             </NavLink>
           ))}
         </div>
-      </nav>
+        </nav>
+      </div>
       <CommishMenu open={menu} onClose={closeMenu} active={active} />
     </div>
   )
+}
+
+// True while a text field has focus — on phones that means the keyboard is up.
+function useTyping() {
+  const [typing, setTyping] = useState(false)
+  useEffect(() => {
+    const isText = (el) => el?.matches?.('textarea, input:not([type=date]):not([type=checkbox]):not([type=radio])')
+    const onIn = (e) => setTyping(isText(e.target))
+    const onOut = () => setTyping(false)
+    document.addEventListener('focusin', onIn)
+    document.addEventListener('focusout', onOut)
+    return () => { document.removeEventListener('focusin', onIn); document.removeEventListener('focusout', onOut) }
+  }, [])
+  return typing
 }
