@@ -10,7 +10,6 @@ import AdminDashboard from './pages/admin/AdminDashboard'
 import AdminRoster from './pages/admin/AdminRoster'
 import AdminNewSession from './pages/admin/AdminNewSession'
 import AdminTournament from './pages/admin/AdminTournament'
-import AdminChat from './pages/admin/AdminChat'
 import { isAdmin } from './lib/auth'
 
 function RequireAdmin({ children }) {
@@ -41,7 +40,7 @@ export default function App() {
       <Route path="/admin/sessions/new" element={<RequireAdmin><Layout><AdminNewSession /></Layout></RequireAdmin>} />
       <Route path="/admin/sessions/:id" element={<SessionRedirect />} />
       <Route path="/admin/tournament" element={<RequireAdmin><Layout><AdminTournament /></Layout></RequireAdmin>} />
-      <Route path="/admin/chat" element={<RequireAdmin><Layout><AdminChat /></Layout></RequireAdmin>} />
+      <Route path="/admin/chat" element={<Navigate to="/tonight" replace />} />
 
       <Route path="*" element={<Navigate to="/" replace />} />
     </Routes>

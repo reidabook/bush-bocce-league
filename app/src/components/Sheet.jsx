@@ -1,4 +1,5 @@
 import { useEffect, useRef } from 'react'
+import { createPortal } from 'react-dom'
 import { Icon } from './ui'
 
 // Bottom sheet dialog. Closes on backdrop tap, Escape, or the X.
@@ -14,11 +15,11 @@ export default function Sheet({ open, title, onClose, children, footer }) {
     return () => { document.removeEventListener('keydown', onKey); document.body.style.overflow = prev }
   }, [open, onClose])
   if (!open) return null
-  return (
+  return createPortal(
     <div className="fixed inset-0 z-50 flex items-end justify-center">
       <div className="absolute inset-0 bg-[#0F1C3D]/50 dark:bg-black/65" onClick={onClose} aria-hidden="true" />
       <div ref={panel} tabIndex={-1} role="dialog" aria-modal="true" aria-label={title}
-        className="relative w-full max-w-lg bg-ice rounded-t-3xl max-h-[88svh] flex flex-col outline-none"
+        className="relative w-full max-w-lg bg-ice rounded-t-3xl max-h-[88svh] flex flex-col outline-none focus-visible:outline-none"
         style={{ paddingBottom: 'max(16px, env(safe-area-inset-bottom))' }}>
         <div className="flex items-center gap-2 pl-5 pr-2 pt-3 pb-2">
           <h2 className="flex-1 font-display font-extrabold text-[22px] text-brand">{title}</h2>
@@ -29,6 +30,7 @@ export default function Sheet({ open, title, onClose, children, footer }) {
         <div className="overflow-y-auto px-4 pb-2 space-y-4">{children}</div>
         {footer && <div className="px-4 pt-3">{footer}</div>}
       </div>
-    </div>
+    </div>,
+    document.body,
   )
 }

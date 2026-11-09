@@ -22,7 +22,7 @@ React SPA (Vite) + Vercel serverless API. No traditional backend — all persist
 | `/admin/sessions/new` | `AdminNewSession` | Admin | 2-step session creation flow |
 | `/admin/sessions/:id` | redirect | — | → `/sessions/:id` (commissioner controls live there) |
 | `/admin/tournament` | `AdminTournament` | Admin | Seed and run tournament |
-| `/admin/chat` | `AdminChat` | Admin | AI chat (Gemini) for hands-free game logging |
+| `/admin/chat` | redirect | — | → `/tonight` (assistant is docked there) |
 
 ---
 
@@ -119,6 +119,8 @@ Tiebreaker order: points → win rate → name (alpha).
 | `src/lib/teamUtils.js` | Pure team-building: `buildTeams` (random), `buildSnakeDraftTeams` (snake draft) |
 | `src/pages/admin/AdminNewSession.jsx` | 2-step session creation: date/team-count → attendees → team assignment (random/snake/manual) |
 | `src/pages/session/commish.jsx` | Commissioner controls: pending game card, game/add-game/teams/options sheets |
+| `src/pages/session/Assistant.jsx` | Docked AI assistant composer + conversation sheet |
+| `src/lib/chatClient.js` | `buildChatRequest`, `sendChat` for `/api/chat` |
 | `src/pages/session/useCommish.js` | Commissioner actions (one at a time, reload after) |
 | `src/lib/gameFlow.js` | `pendingGame`, `sittingOut`, `closeWarning`, `gameMatchup`, `unassignedPlayers` |
 | `src/components/Sheet.jsx` | Bottom sheet dialog |
@@ -146,6 +148,7 @@ Red Team · Blue Team · Green Team · Yellow Team · Purple Team · Orange Team
 | `test/sessionGroups.test.js` | Month grouping, same-date order, year labels |
 | `test/sessionStats.test.js` | Per-session points, exclusions, departures, departure labels |
 | `test/gameFlow.test.js` | Pending game, sit-outs, close warning, matchup, late-arrival candidates |
+| `test/chatClient.test.js` | Chat request context mapping |
 | `test/teamColors.test.js` | Team ball colors: order, wrap, lookup by id |
 | `test/teamUtils.test.js` | `buildTeams` (random), `buildSnakeDraftTeams` (snake draft), `shuffle` |
 

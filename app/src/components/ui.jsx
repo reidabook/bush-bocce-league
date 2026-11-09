@@ -88,6 +88,7 @@ const ICONS = {
   more: <><circle cx="5" cy="12" r="1.6" fill="currentColor" /><circle cx="12" cy="12" r="1.6" fill="currentColor" /><circle cx="19" cy="12" r="1.6" fill="currentColor" /></>,
   arrow: <path d="M5 12h12M13 7l5 5-5 5" />,
   shuffle: <path d="M4 7h3c5 0 5 10 10 10h3M17 4l3 3-3 3M4 17h3c1.5 0 2.5-.9 3.3-2M17 14l3 3-3 3M14 9c.8-1.2 1.8-2 3-2h3" />,
+  chat: <path d="M5 5h14v10H10l-4 4v-4H5z" />,
   sparkle: <path d="M12 3l1.8 4.6L18 9l-4.2 1.4L12 15l-1.8-4.6L6 9l4.2-1.4z" />,
   send: <path d="M5 12h14M13 6l6 6-6 6" />,
   trash: <path d="M4 7h16M10 11v6M14 11v6M6 7l1 13h10l1-13M9 7V4h6v3" />,
