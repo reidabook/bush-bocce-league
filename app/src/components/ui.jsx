@@ -92,3 +92,17 @@ const ICONS = {
   send: <path d="M5 12h14M13 6l6 6-6 6" />,
   trash: <path d="M4 7h16M10 11v6M14 11v6M6 7l1 13h10l1-13M9 7V4h6v3" />,
 }
+
+export function SkeletonList({ rows = 6, height = 54 }) {
+  return (
+    <div className="bg-card rounded-2xl overflow-hidden" role="status" aria-label="Loading">
+      {Array.from({ length: rows }, (_, i) => (
+        <div key={i} className="flex items-center gap-3 px-3.5 border-t border-hair first:border-t-0" style={{ height }}>
+          <div className="w-5 h-4 rounded bg-hair animate-pulse" />
+          <div className="flex-1 h-4 rounded bg-hair animate-pulse" style={{ maxWidth: 80 + ((i * 37) % 90) }} />
+          <div className="w-8 h-6 rounded bg-hair animate-pulse" />
+        </div>
+      ))}
+    </div>
+  )
+}

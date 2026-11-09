@@ -1,6 +1,6 @@
 import { describe, it, expect } from 'vitest'
 import { computeStandings } from '../api/_standingsLogic.js'
-import { fmtWinPct } from '../src/pages/Home.jsx'
+import { fmtWinPct } from '../src/lib/standingsSort.js'
 
 // ─── Fixtures ─────────────────────────────────────────────────────────────────
 

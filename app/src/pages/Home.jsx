@@ -1,179 +1,112 @@
 import { useEffect, useState } from 'react'
 import { Link } from 'react-router-dom'
-import { getStandings, getSessions } from '../lib/db'
-import Spinner from '../components/Spinner'
+import { getStandings, getTeamsForSession } from '../lib/db'
+import { fetchSessionsCached } from '../lib/useActiveSession'
+import { sortStandings, nextSort, fmtWinPct, SORT_COLUMNS } from '../lib/standingsSort'
+import { teamColorById, sortTeams } from '../lib/teamColors'
+import { PageTitle, Card, LiveLabel, EmptyState, SkeletonList, Icon } from '../components/ui'
+import Ball from '../components/Ball'
+import ErrorState from '../components/ErrorState'
 
-export function fmtWinPct(wins, gamesPlayed) {
-  if (gamesPlayed === 0) return '—'
-  return (wins / gamesPlayed).toFixed(3).replace(/^0/, '')
-}
+export { fmtWinPct }
 
 export default function Home() {
-  const [standings, setStandings] = useState([])
-  const [activeSession, setActiveSession] = useState(null)
-  const [loading, setLoading] = useState(true)
+  const [standings, setStandings] = useState(null)
+  const [active, setActive] = useState(null)
+  const [activeTeams, setActiveTeams] = useState([])
   const [error, setError] = useState(null)
-  const [initializing, setInitializing] = useState(false)
-  const [initResult, setInitResult] = useState(null)
-  const [sortCol, setSortCol] = useState('pts')
-  const [sortDir, setSortDir] = useState('desc')
+  const [sort, setSort] = useState({ col: 'pts', dir: 'desc' })
 
   useEffect(() => {
-    Promise.all([getStandings(), getSessions()])
+    Promise.all([getStandings(), fetchSessionsCached()])
       .then(([s, sessions]) => {
         setStandings(s)
-        setActiveSession(sessions.find((s) => s.status === 'active') || null)
+        const a = sessions.find((x) => x.status === 'active') || null
+        setActive(a)
+        if (a) getTeamsForSession(a.id).then(setActiveTeams).catch(() => {})
       })
       .catch((e) => setError(e.message))
-      .finally(() => setLoading(false))
   }, [])
 
-  async function handleInit() {
-    setInitializing(true)
-    setInitResult(null)
-    try {
-      const res = await fetch('/api/init-sheets')
-      const data = await res.json()
-      const created = data.sheets?.filter((s) => s.action === 'created').length ?? 0
-      setInitResult({ ok: true, message: `Done! Created ${created} sheet(s). Reloading…` })
-      setTimeout(() => window.location.reload(), 1200)
-    } catch (err) {
-      setInitResult({ ok: false, message: err.message })
-      setInitializing(false)
-    }
-  }
+  if (error) return <ErrorState error={error} />
 
-  function handleSort(col) {
-    if (sortCol === col) {
-      setSortDir((d) => (d === 'desc' ? 'asc' : 'desc'))
-    } else {
-      setSortCol(col)
-      setSortDir('desc')
-    }
-  }
-
-  const sorted = [...standings].sort((a, b) => {
-    let diff
-    if (sortCol === 'pts') diff = b.points - a.points
-    else if (sortCol === 'w') diff = b.wins - a.wins
-    else if (sortCol === 'gp') diff = b.gamesPlayed - a.gamesPlayed
-    else if (sortCol === 'pct') {
-      const aP = a.gamesPlayed ? a.wins / a.gamesPlayed : 0
-      const bP = b.gamesPlayed ? b.wins / b.gamesPlayed : 0
-      diff = bP - aP
-    }
-    return sortDir === 'desc' ? diff : -diff
-  })
-
-  if (loading) return <Spinner />
-  if (error) return (
-    <div className="rounded-xl border border-red-200 bg-red-50 p-4 space-y-2">
-      <p className="font-semibold text-red-700 text-sm">Failed to load data</p>
-      <p className="text-red-600 text-xs font-mono break-all">{error}</p>
-      {error.includes('not found') && (
-        <div className="pt-1 space-y-1">
-          <button
-            onClick={handleInit}
-            disabled={initializing}
-            className="text-xs bg-red-700 text-white px-3 py-1.5 rounded-lg disabled:opacity-50"
-          >
-            {initializing ? 'Initializing…' : 'Initialize database'}
-          </button>
-          {initResult && (
-            <p className={`text-xs ${initResult.ok ? 'text-green-700' : 'text-red-600'}`}>
-              {initResult.message}
-            </p>
-          )}
-        </div>
-      )}
-      <p className="text-red-500 text-xs">Visit <a href="/api/debug" className="underline" target="_blank">/api/debug</a> for connection details.</p>
-    </div>
-  )
+  const col = SORT_COLUMNS.find((c) => c.col === sort.col)
+  const rows = standings ? sortStandings(standings, sort.col, sort.dir) : []
 
   return (
     <div className="space-y-5">
-      {/* Active session banner */}
-      {activeSession && (
-        <Link
-          to={`/sessions/${activeSession.id}`}
-          className="block rounded-xl p-4 text-white shadow"
-          style={{ backgroundColor: '#1B2F5E' }}
-        >
-          <div className="text-xs font-medium mb-1" style={{ color: '#89B4D0' }}>
-            SESSION {activeSession.session_number} · IN PROGRESS
-          </div>
-          <div className="font-bold text-lg">
-            {new Date(activeSession.date + 'T12:00:00').toLocaleDateString('en-US', {
-              weekday: 'long', month: 'long', day: 'numeric',
-            })}
-          </div>
-          <div className="text-sm mt-1 opacity-70">Tap to see tonight's teams →</div>
-        </Link>
-      )}
+      {active && <LiveCard session={active} teams={activeTeams} />}
 
-      {/* Standings */}
-      <div>
-        <h2 className="text-xs font-bold uppercase tracking-widest mb-3 opacity-50">
-          Season Standings
-        </h2>
-        {standings.length === 0 ? (
-          <p className="text-sm opacity-50 text-center py-8">
-            No games recorded yet. Check back after the first session!
-          </p>
+      <section className="space-y-2.5">
+        <PageTitle title="Standings">
+          {standings && <span className="text-[13px] text-muted pb-0.5">{standings.length} players</span>}
+        </PageTitle>
+
+        <div role="group" aria-label="Sort standings by" className="inline-flex gap-1 bg-card rounded-full p-[3px]">
+          {SORT_COLUMNS.map((c) => {
+            const on = sort.col === c.col
+            return (
+              <button key={c.col} type="button" aria-pressed={on}
+                onClick={() => setSort((s) => nextSort(s, c.col))}
+                className={`h-9 px-3.5 rounded-full text-[13px] font-semibold transition-colors ${on ? 'bg-[#1B2F5E] text-white dark:bg-sky dark:text-[#0B1530]' : 'text-muted'}`}>
+                {c.label}{on && sort.dir === 'asc' ? ' ↑' : ''}
+              </button>
+            )
+          })}
+        </div>
+
+        {!standings ? (
+          <SkeletonList rows={8} />
+        ) : standings.length === 0 ? (
+          <EmptyState title="No games yet">Standings start after the first session closes.</EmptyState>
         ) : (
-          <div className="bg-white rounded-xl shadow-sm overflow-hidden">
-            <table className="w-full text-sm">
-              <thead>
-                <tr className="text-xs uppercase tracking-wide border-b">
-                  <th className="text-left px-4 py-2 font-medium opacity-40">#</th>
-                  <th className="text-left px-4 py-2 font-medium opacity-40">Player</th>
-                  {[
-                    { col: 'pts', label: 'PTS' },
-                    { col: 'w', label: 'W' },
-                    { col: 'gp', label: 'GP' },
-                    { col: 'pct', label: 'W%' },
-                  ].map(({ col, label }) => (
-                    <th
-                      key={col}
-                      className="text-right px-4 py-2 font-medium cursor-pointer select-none"
-                      style={{ color: sortCol === col ? '#1B2F5E' : undefined, opacity: sortCol === col ? 1 : 0.4 }}
-                      onClick={() => handleSort(col)}
-                    >
-                      {label}{sortCol === col ? (sortDir === 'desc' ? ' ↓' : ' ↑') : ''}
-                    </th>
-                  ))}
-                </tr>
-              </thead>
-              <tbody>
-                {sorted.map((player, i) => (
-                  <tr
-                    key={player.id}
-                    className="border-b last:border-0"
-                    style={{ backgroundColor: i === 0 ? '#F5F3EF' : 'white' }}
-                  >
-                    <td className="px-4 py-3 font-bold opacity-30 w-8">{i + 1}</td>
-                    <td className="px-4 py-3 font-medium">{player.name}</td>
-                    <td
-                      className="px-4 py-3 text-right font-bold"
-                      style={{ color: '#1B2F5E' }}
-                    >
-                      {player.points}
-                    </td>
-                    <td className="px-4 py-3 text-right opacity-60">{player.wins}</td>
-                    <td className="px-4 py-3 text-right opacity-60">{player.gamesPlayed}</td>
-                    <td className="px-4 py-3 text-right opacity-60 tabular-nums">
-                      {fmtWinPct(player.wins, player.gamesPlayed)}
-                    </td>
-                  </tr>
-                ))}
-              </tbody>
-            </table>
-            <div className="px-4 py-2 text-xs opacity-30 border-t">
-              PTS = Points · W = Wins · GP = Games Played · W% = Win %
-            </div>
-          </div>
+          <Card className="overflow-hidden">
+            <ol>
+              {rows.map((p, i) => {
+                const leader = sort.col === 'pts' && sort.dir === 'desc' && i === 0 && p.points > 0
+                const big = sort.col === 'pct' ? fmtWinPct(p.wins, p.gamesPlayed) : col.value(p)
+                const sub = sort.col === 'pts'
+                  ? `${p.wins}W · ${p.gamesPlayed} games · ${fmtWinPct(p.wins, p.gamesPlayed)}`
+                  : `${p.points} pts · ${p.wins}W · ${p.gamesPlayed} games`
+                return (
+                  <li key={p.id} className="flex items-center gap-3 px-3.5 h-[56px] border-t border-hair first:border-t-0">
+                    <span className="font-display font-extrabold text-xl text-muted w-6 text-center tabular">{i + 1}</span>
+                    <div className="flex-1 min-w-0">
+                      <div className="flex items-center gap-1.5 font-semibold text-[17px] leading-tight">
+                        <span className="truncate">{p.name}</span>
+                        {leader && <Ball pallino size={10} title="Leader — closest to the pallino" />}
+                      </div>
+                      <div className="text-[13px] text-muted tabular">{sub}</div>
+                    </div>
+                    <div className="flex flex-col items-end leading-none">
+                      <span className="font-display font-black text-[30px] text-brand tabular">{big}</span>
+                      <span className="text-[10px] font-bold tracking-[.12em] text-muted">{col.short}</span>
+                    </div>
+                  </li>
+                )
+              })}
+            </ol>
+          </Card>
         )}
-      </div>
+      </section>
     </div>
+  )
+}
+
+function LiveCard({ session, teams }) {
+  const sorted = sortTeams(teams)
+  const date = new Date(session.date + 'T12:00:00').toLocaleDateString('en-US', { weekday: 'short', month: 'short', day: 'numeric' })
+  return (
+    <Link to="/tonight" className="flex items-center gap-3 bg-card rounded-2xl p-3.5 shadow-[0_1px_0_var(--line)]">
+      <div className="flex-1 min-w-0 space-y-1.5">
+        <LiveLabel>Live now</LiveLabel>
+        <div className="font-display font-extrabold text-[22px] leading-none text-brand">Tonight · Session {session.session_number}</div>
+        <div className="flex items-center gap-1.5 text-[13px] text-muted">
+          {sorted.map((t) => <Ball key={t.id} color={teamColorById(teams, t.id)} size={14} />)}
+          <span>{sorted.length ? `${sorted.length} teams · ` : ''}{date}</span>
+        </div>
+      </div>
+      <Icon name="chevron" size={20} className="text-muted" />
+    </Link>
   )
 }

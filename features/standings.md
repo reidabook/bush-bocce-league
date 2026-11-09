@@ -6,16 +6,12 @@ Live leaderboard shown on the home page (`/`). Computed on every load from raw g
 
 ## Display
 
-| Column | Description |
-|--------|-------------|
-| Rank | Position in current sort order |
-| Name | Player name |
-| PTS | Total points |
-| W | Wins |
-| GP | Games played |
-| W% | Win percentage (wins ÷ games played; `—` if no games; formatted as `.750`) |
-
-PTS, W, GP, and W% column headers are clickable to sort ascending or descending. Default sort: PTS descending. The rank column reflects the current sort order.
+- **Live card** (only while a session is active): "Live now", "Tonight · Session N", the teams' balls, date. Tap → `/tonight`.
+- **Title** "Standings" + player count.
+- **Sort chips:** Points · Wins · Games · Win %. Tap a chip to sort by it (descending); tap the active chip again to flip to ascending (shown with ↑). Ties always fall back to points → win rate → name. Logic: `src/lib/standingsSort.js`.
+- **Rows:** rank, name, sub-line, and the sorted stat as a big number with a small label (PTS / WINS / GAMES / WIN %). Sub-line shows W · games · W% when sorting by points, otherwise pts · W · games. W% formatted `.750`, `—` with no games.
+- **Leader:** the #1 row in the default sort gets a pallino mark.
+- **Loading:** skeleton rows. **Empty:** "No games yet — standings start after the first session closes." **Error:** shared `ErrorState` (retry, sheet-tab setup, link to `/api/debug`).
 
 ## Computation (`getStandings` in `api/_db.js`)
 
