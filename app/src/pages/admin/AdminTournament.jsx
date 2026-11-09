@@ -72,6 +72,10 @@ export default function AdminTournament() {
                         <Button size="sm" variant="ghost" disabled={busy}
                           onClick={() => run(() => recordMatchResult(m.id, null, tournament.id, m.round, m.position))}>Clear</Button>
                       </div>
+                    ) : !(m.player_a && m.player_b) ? (
+                      <p className="text-[15px] text-muted">
+                        {m.player_a?.name ?? 'TBD'} vs {m.player_b?.name ?? 'TBD'} — waiting on earlier games
+                      </p>
                     ) : (
                       <div className="flex gap-2">
                         {[[m.player_a, m.player_a_id], [m.player_b, m.player_b_id]].map(([p, id], i) => p ? (

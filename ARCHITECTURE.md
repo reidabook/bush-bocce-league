@@ -112,6 +112,7 @@ Tiebreaker order: points → win rate → name (alpha).
 | `src/lib/standingsSort.js` | `sortStandings`, `nextSort`, `fmtWinPct` |
 | `src/components/ErrorState.jsx` | Shared load-error card (retry, init sheet tabs) |
 | `src/lib/sessionGroups.js` | `groupSessionsByMonth`, `dayParts`, status labels |
+| `api/_bracketLogic.js` | Pure bracket logic: `buildBracket` (all rounds up front, byes to top seeds), `seedOrder`, `nextSlot`, `isFinal` |
 | `src/lib/bracket.js` | `groupByRound`, `roundLabel`, `champion` |
 | `src/lib/teamColors.js` | Team ball color by alphabetical team position (`teamColor`, `teamColorById`) |
 | `src/lib/useActiveSession.js` | Cached active-session lookup for the tab bar live dot |
@@ -151,6 +152,7 @@ Red Team · Blue Team · Green Team · Yellow Team · Purple Team · Orange Team
 | `test/sessionStats.test.js` | Per-session points, exclusions, departures, departure labels |
 | `test/gameFlow.test.js` | Pending game, sit-outs, close warning, matchup, late-arrival candidates |
 | `test/chatClient.test.js` | Chat request context mapping |
+| `test/bracketLogic.test.js` | Bracket building, byes, seeding order, advancement slots, final detection |
 | `test/bracket.test.js` | Round grouping/labels, champion |
 | `test/teamColors.test.js` | Team ball colors: order, wrap, lookup by id |
 | `test/teamUtils.test.js` | `buildTeams`, `buildSnakeDraftTeams`, `shuffle`, `captainName`, `moveToNextTeam`, `teamsFromAssignment` |
@@ -160,13 +162,19 @@ The `npm run build` script runs tests first — failing tests block Vercel deplo
 
 ---
 
-## E2E tests
+## E2E tests (Playwright)
 
-| File | Scenario |
-|------|---------|
-| `e2e/bocce.test.js` | 2-week, 6-player synthetic scenario with departures — validates scoring and standings |
-| `e2e/bocce-chat.test.js` | Same scenario driven via AI chat prompts |
-| `e2e/may11.test.js` | Real May 11 data: 3-team round-robin + same-date second session + late joiner (Colin) |
+Run locally: `npm run e2e` (from `app/`). Starts its own Vite server on :5180 with `VITE_ADMIN_PASSWORD=e2e-commissioner` and fakes `/api/sheets` in the browser with `e2e/support/fakeBackend.js` — an in-memory copy of the sheet tabs that returns the same shapes as `api/_db.js` and scores with the real `api/_standingsLogic.js` / `api/_bracketLogic.js`. **Never touches the league's Google Sheet.** `/api/chat` is faked per test.
 
-Run against local dev: `npx playwright test`  
-Run against prod: `npx playwright test --config=playwright.prod.config.js`
+| File | Covers |
+|------|--------|
+| `e2e/scoring.test.js` | Two sessions with early departures → exact standings; tonight's points on team cards |
+| `e2e/may11.test.js` | Real May 11 night: 3-team round robin, late arrival + sat-out, same-date second session → standings |
+| `e2e/newSession.test.js` | New session: snake draft, random (move, reshuffle), manual, back/cancel |
+| `e2e/commissioner.test.js` | Login/menu/logout, admin redirects, roster, undo/change/clear/delete game, session date/close/reopen/delete |
+| `e2e/assistant.test.js` | Docked assistant records a result and refreshes; error message |
+| `e2e/tournament.test.js` | 4- and 5-player brackets (byes) to a champion, public view, empty state |
+| `e2e/public.test.js` | Standings sort/tiebreak/leader, live card + read-only Tonight, tabs, load error |
+| `e2e/smoke.prod.test.js` | Read-only production smoke (`npm run e2e:prod`) |
+
+Helpers in `e2e/support/app.js` drive the UI by accessible names (`playGame`, `leftEarly`, `addLateArrival`, `sitOut`, `closeSession`, `readStandings`).

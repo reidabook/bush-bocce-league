@@ -1,6 +1,7 @@
 import { GoogleSpreadsheet } from 'google-spreadsheet'
 import { JWT } from 'google-auth-library'
 import { normalizeGame, computeStandings } from './_standingsLogic.js'
+import { buildBracket, nextSlot, isFinal } from './_bracketLogic.js'
 
 // ─── Connection ────────────────────────────────────────────────────────────────
 
@@ -484,6 +485,7 @@ export async function getTournament() {
 }
 
 export async function createTournament(seededPlayerIds) {
+  const rows = buildBracket(seededPlayerIds) // throws for < 2 players
   const tSheet = await sheet('tournament')
   const mSheet = await sheet('tournament_matches')
   const tournamentId = crypto.randomUUID()
@@ -493,35 +495,9 @@ export async function createTournament(seededPlayerIds) {
     format: 'single_elimination',
     created_at: new Date().toISOString(),
   })
-
-  const matches = []
-  const n = seededPlayerIds.length
-  for (let i = 0; i < Math.floor(n / 2); i++) {
-    matches.push({
-      id: crypto.randomUUID(),
-      tournament_id: tournamentId,
-      round: '1',
-      position: String(i + 1),
-      player_a_id: seededPlayerIds[i],
-      player_b_id: seededPlayerIds[n - 1 - i],
-      winner_id: '',
-      is_bye: 'false',
-    })
-  }
-  if (n % 2 === 1) {
-    const byePlayer = seededPlayerIds[Math.floor(n / 2)]
-    matches.push({
-      id: crypto.randomUUID(),
-      tournament_id: tournamentId,
-      round: '1',
-      position: String(Math.floor(n / 2) + 1),
-      player_a_id: byePlayer,
-      player_b_id: '',
-      winner_id: byePlayer,
-      is_bye: 'true',
-    })
-  }
-  if (matches.length > 0) await mSheet.addRows(matches)
+  // Every round is laid out up front; byes go to the top seeds and are
+  // already placed in round 2.
+  await mSheet.addRows(rows.map((m) => ({ id: crypto.randomUUID(), tournament_id: tournamentId, ...m })))
   invalidate('tournament', 'tournament_matches')
   return { id: tournamentId, status: 'active', format: 'single_elimination' }
 }
@@ -557,36 +533,40 @@ export async function recordMatchResult(matchId, winnerId, tournamentId, round, 
   const r = await getRows('tournament_matches')
   const row = r.find((row) => row.get('id') === matchId)
   if (!row) throw new Error(`Match not found: ${matchId}`)
-  row.set('winner_id', winnerId)
+  const previousWinner = row.get('winner_id') || ''
+  row.set('winner_id', winnerId ?? '')
   await row.save()
 
-  // Advance winner to next round
-  const nextRound = round + 1
-  const nextPosition = Math.ceil(position / 2)
-
-  const existing = r.find(
-    (row) =>
-      row.get('tournament_id') === tournamentId &&
-      row.get('round') === String(nextRound) &&
-      row.get('position') === String(nextPosition)
-  )
-
-  if (existing) {
-    const slot = existing.get('player_a_id') ? 'player_b_id' : 'player_a_id'
-    existing.set(slot, winnerId)
-    await existing.save()
-  } else {
-    const s = await sheet('tournament_matches')
-    await s.addRow({
-      id: crypto.randomUUID(),
-      tournament_id: tournamentId,
-      round: String(nextRound),
-      position: String(nextPosition),
-      player_a_id: winnerId,
-      player_b_id: '',
-      winner_id: '',
-      is_bye: 'false',
-    })
+  const matches = r.map(toObj).filter((m) => m.tournament_id === tournamentId)
+  if (!isFinal(matches, round)) {
+    // Winner moves into a fixed slot of the next match (odd position → A, even → B).
+    const next = nextSlot(round, position)
+    const existing = r.find(
+      (row) =>
+        row.get('tournament_id') === tournamentId &&
+        row.get('round') === String(next.round) &&
+        row.get('position') === String(next.position)
+    )
+    if (existing) {
+      // Clearing a result only removes the player it had advanced.
+      if (winnerId || existing.get(next.slot) === previousWinner) {
+        existing.set(next.slot, winnerId ?? '')
+        await existing.save()
+      }
+    } else if (winnerId) {
+      // Brackets created before rounds were laid out up front.
+      const s = await sheet('tournament_matches')
+      await s.addRow({
+        id: crypto.randomUUID(),
+        tournament_id: tournamentId,
+        round: String(next.round),
+        position: String(next.position),
+        player_a_id: next.slot === 'player_a_id' ? winnerId : '',
+        player_b_id: next.slot === 'player_b_id' ? winnerId : '',
+        winner_id: '',
+        is_bye: 'false',
+      })
+    }
   }
   invalidate('tournament_matches')
 }

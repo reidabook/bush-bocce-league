@@ -26,3 +26,7 @@ npm-debug.log*
 .idea/
 *.sw?
 .vercel
+
+# Playwright
+test-results/
+playwright-report/
