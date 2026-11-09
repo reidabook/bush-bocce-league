@@ -33,7 +33,7 @@ While teams are being built (New session), random/snake teams are listed in colo
 
 ## Shell (`components/Layout.jsx`)
 
-Navy header (logo, wordmark, commissioner button) ending in a mountain-ridge SVG edge. Fixed bottom tab bar: Standings · Tonight · Sessions · Rules; red dot on Tonight while a session is active (`useActiveSession`, 60s cache).
+Navy header (logo, wordmark, commissioner button) ending in a mountain-ridge SVG edge. Top padding = safe-area inset + 18px so the wordmark sits clear of the iPhone status bar. Fixed bottom tab bar: Standings · Tonight · Sessions · Rules; red dot on Tonight while a session is active (`useActiveSession`, 60s cache).
 
 ## Primitives (`components/ui.jsx`)
 

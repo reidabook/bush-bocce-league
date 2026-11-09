@@ -24,7 +24,7 @@ export function Ridge() {
 
 export function Header({ children }) {
   return (
-    <header className="relative text-white pb-[26px]" style={{ backgroundColor: 'var(--navy)', paddingTop: 'max(14px, env(safe-area-inset-top))' }}>
+    <header className="relative text-white pb-[26px]" style={{ backgroundColor: 'var(--navy)', paddingTop: 'calc(env(safe-area-inset-top, 0px) + 18px)' }}>
       <div className="max-w-lg mx-auto px-4 flex items-center gap-2.5">{children}</div>
       <Ridge />
     </header>
