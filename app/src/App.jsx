@@ -27,7 +27,8 @@ export default function App() {
       <Route path="/sessions" element={<Layout><SessionList /></Layout>} />
       <Route path="/sessions/:id" element={<Layout><SessionDetail /></Layout>} />
       <Route path="/tournament" element={<Layout><Tournament /></Layout>} />
-      <Route path="/active" element={<Layout><ActiveSession /></Layout>} />
+      <Route path="/tonight" element={<Layout><ActiveSession /></Layout>} />
+      <Route path="/active" element={<Navigate to="/tonight" replace />} />
       <Route path="/rules" element={<Layout><Rules /></Layout>} />
       <Route path="/admin/login" element={<Layout><AdminLogin /></Layout>} />
 

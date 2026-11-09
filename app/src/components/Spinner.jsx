@@ -1,10 +1,7 @@
-export default function Spinner() {
+export default function Spinner({ label = 'Loading' }) {
   return (
-    <div className="flex justify-center py-12">
-      <div
-        className="w-8 h-8 rounded-full border-2 border-t-transparent animate-spin"
-        style={{ borderColor: '#1B2F5E', borderTopColor: 'transparent' }}
-      />
+    <div className="flex justify-center py-16" role="status" aria-label={label}>
+      <div className="w-7 h-7 rounded-full border-[2.5px] border-line border-t-sky animate-spin" />
     </div>
   )
 }

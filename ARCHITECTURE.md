@@ -13,7 +13,7 @@ React SPA (Vite) + Vercel serverless API. No traditional backend — all persist
 | `/` | `Home` | Public | Standings leaderboard + active session card |
 | `/sessions` | `SessionList` | Public | All sessions list |
 | `/sessions/:id` | `SessionDetail` | Public | Session detail: teams, games, player points |
-| `/active` | `ActiveSession` | Public | Live session view + AI chat interface |
+| `/tonight` | `ActiveSession` | Public | Live view of the active session (`/active` redirects here) |
 | `/tournament` | `Tournament` | Public | Tournament bracket |
 | `/rules` | `Rules` | Public | Scoring rules |
 | `/admin/login` | `AdminLogin` | Public | Password gate |
@@ -109,6 +109,10 @@ Tiebreaker order: points → win rate → name (alpha).
 |------|---------|
 | `src/lib/db.js` | Thin HTTP client — all calls to `/api/sheets` |
 | `src/lib/auth.js` | `login()` / `isAdmin()` via `sessionStorage` |
+| `src/lib/teamColors.js` | Team ball color by alphabetical team position (`teamColor`, `teamColorById`) |
+| `src/lib/useActiveSession.js` | Cached active-session lookup for the tab bar live dot |
+| `src/components/Layout.jsx` | Header with ridge edge + bottom tab bar |
+| `src/components/ui.jsx`, `Ball.jsx` | Design-system primitives (see `features/design-system.md`) |
 | `src/lib/teamUtils.js` | Pure team-building: `buildTeams` (random), `buildSnakeDraftTeams` (snake draft) |
 | `src/pages/admin/AdminNewSession.jsx` | 2-step session creation: date/team-count → attendees → team assignment (random/snake/manual) |
 | `src/pages/admin/AdminSessionManage.jsx` | Active session management: add games, record winners, log departures, per-game player exclusions |
@@ -131,6 +135,7 @@ Red Team · Blue Team · Green Team · Yellow Team · Purple Team · Orange Team
 | File | What it tests |
 |------|--------------|
 | `test/standings.test.js` | `computeStandings`: basic scoring, exclusions, departures, historical stats, sort order |
+| `test/teamColors.test.js` | Team ball colors: order, wrap, lookup by id |
 | `test/teamUtils.test.js` | `buildTeams` (random), `buildSnakeDraftTeams` (snake draft), `shuffle` |
 
 Run: `node node_modules/vitest/dist/cli.js run` from `app/`  
