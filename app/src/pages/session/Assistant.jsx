@@ -36,7 +36,7 @@ export default function Assistant({ data, reload }) {
   }
 
   const composer = (autoFocus) => (
-    <form onSubmit={send} className="flex-1 flex items-center gap-2 h-12 pl-3.5 pr-1 bg-card rounded-full ring-1 ring-line focus-within:ring-sky">
+    <form onSubmit={send} className="flex-1 min-w-0 flex items-center gap-2 h-12 pl-3.5 pr-1 bg-card rounded-full ring-1 ring-line focus-within:ring-sky">
       <Icon name="sparkle" size={18} className="text-muted shrink-0" />
       <input value={input} onChange={(e) => setInput(e.target.value)} autoFocus={autoFocus}
         placeholder="“Kat's beat Colin's”" aria-label="Tell the assistant what happened" enterKeyHint="send"

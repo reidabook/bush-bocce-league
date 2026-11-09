@@ -200,7 +200,7 @@ export function SessionView({ data, reload, admin }) {
           <div className="fixed inset-x-0 z-20 bg-ice/95 backdrop-blur" style={{ bottom: 'calc(62px + max(10px, env(safe-area-inset-bottom)))' }}>
             <div className="max-w-lg mx-auto px-3 py-2.5 flex items-center gap-2">
               <Assistant data={data} reload={reload} />
-              <Button className="h-12 rounded-full px-5" disabled={c.busy || teams.length < 2} onClick={quickAddGame}>
+              <Button className="h-12 rounded-full px-4 min-[380px]:px-5 shrink-0" disabled={c.busy || teams.length < 2} onClick={quickAddGame}>
                 <Icon name="plus" size={16} strokeWidth={2.5} /> Game
               </Button>
             </div>

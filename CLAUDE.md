@@ -6,7 +6,8 @@
 - **Auth:** Client-side only. `VITE_ADMIN_PASSWORD` env var checked in `src/lib/auth.js`; result stored in `sessionStorage`.
 - **Deployment:** Vercel, auto-deploys `main` branch. Live at https://bush-league-bocce.vercel.app
 - See `ARCHITECTURE.md` for routes, sheet tabs, and component map.
-- See `features/` for feature specs.
+- See `features/` for feature specs; `features/design-system.md` for tokens, type and UI rules.
+- **UI:** "Can label" design system (PRD issue #1). Use tokens/primitives from `src/index.css` and `src/components/ui.jsx`; prefer tokens over hex values.
 
 ## Mandatory env vars (Vercel + local `.env.local`)
 | Var | Purpose |
@@ -15,7 +16,7 @@
 | `GOOGLE_PRIVATE_KEY` | Private key (newlines as `\n`) |
 | `GOOGLE_SPREADSHEET_ID` | Target spreadsheet ID |
 | `VITE_ADMIN_PASSWORD` | Commissioner password |
-| `GEMINI_API_KEY` | AI chat assistant (AdminChat / ActiveSession) |
+| `GEMINI_API_KEY` | AI assistant docked on Tonight (`src/pages/session/Assistant.jsx` → `api/chat.js`) |
 
 ## MANDATORY: Before any data schema change
 1. Note which Google Sheet tab is affected.

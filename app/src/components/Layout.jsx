@@ -48,15 +48,15 @@ export default function Layout({ children }) {
         <Link to="/" className="flex items-center gap-2.5 rounded-lg">
           <img src="/logo-192.png" alt="" className="w-9 h-9 rounded-full" />
           <span className="flex flex-col leading-none">
-            <span className="font-display font-black text-2xl tracking-[.03em]">Bush League</span>
-            <span className="text-[11px] font-semibold tracking-[.14em] uppercase text-sky mt-[3px]">Bocce · Oakhurst</span>
+            <span className="font-display font-black text-2xl tracking-[.03em] whitespace-nowrap">Bush League</span>
+            <span className="text-[11px] font-semibold tracking-[.14em] uppercase text-sky mt-[3px] whitespace-nowrap">Bocce · Oakhurst</span>
           </span>
         </Link>
         {admin ? (
-          <button type="button" onClick={() => setMenuOpen(true)} aria-haspopup="dialog"
+          <button type="button" onClick={() => setMenuOpen(true)} aria-haspopup="dialog" aria-label="Commissioner menu"
             className="ml-auto h-11 px-3 -mr-1 flex items-center">
             <span className="h-9 px-3 rounded-full ring-[1.5px] ring-sky text-white text-[13px] font-semibold flex items-center gap-1.5">
-              <Icon name="person" size={16} /> Commissioner
+              <Icon name="person" size={16} /><span className="sr-only min-[380px]:not-sr-only">Commissioner</span>
             </span>
           </button>
         ) : (
