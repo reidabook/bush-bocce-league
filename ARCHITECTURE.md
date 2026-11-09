@@ -20,7 +20,7 @@ React SPA (Vite) + Vercel serverless API. No traditional backend — all persist
 | `/admin` | `AdminDashboard` | Admin | Session list + links |
 | `/admin/roster` | `AdminRoster` | Admin | Add/deactivate players |
 | `/admin/sessions/new` | `AdminNewSession` | Admin | 2-step session creation flow |
-| `/admin/sessions/:id` | `AdminSessionManage` | Admin | Manage active session: games, results, departures, per-game exclusions |
+| `/admin/sessions/:id` | redirect | — | → `/sessions/:id` (commissioner controls live there) |
 | `/admin/tournament` | `AdminTournament` | Admin | Seed and run tournament |
 | `/admin/chat` | `AdminChat` | Admin | AI chat (Gemini) for hands-free game logging |
 
@@ -118,7 +118,10 @@ Tiebreaker order: points → win rate → name (alpha).
 | `src/components/ui.jsx`, `Ball.jsx` | Design-system primitives (see `features/design-system.md`) |
 | `src/lib/teamUtils.js` | Pure team-building: `buildTeams` (random), `buildSnakeDraftTeams` (snake draft) |
 | `src/pages/admin/AdminNewSession.jsx` | 2-step session creation: date/team-count → attendees → team assignment (random/snake/manual) |
-| `src/pages/admin/AdminSessionManage.jsx` | Active session management: add games, record winners, log departures, per-game player exclusions |
+| `src/pages/session/commish.jsx` | Commissioner controls: pending game card, game/add-game/teams/options sheets |
+| `src/pages/session/useCommish.js` | Commissioner actions (one at a time, reload after) |
+| `src/lib/gameFlow.js` | `pendingGame`, `sittingOut`, `closeWarning`, `gameMatchup`, `unassignedPlayers` |
+| `src/components/Sheet.jsx` | Bottom sheet dialog |
 | `src/pages/Session.jsx` | One Session screen: header, teams w/ per-player points, games newest first |
 | `src/lib/sessionStats.js` | `computeSessionStats`, `departureLabel` |
 | `api/_db.js` | All Google Sheets read/write logic |
@@ -142,6 +145,7 @@ Red Team · Blue Team · Green Team · Yellow Team · Purple Team · Orange Team
 | `test/standingsSort.test.js` | Standings sort by column/direction + tiebreakers |
 | `test/sessionGroups.test.js` | Month grouping, same-date order, year labels |
 | `test/sessionStats.test.js` | Per-session points, exclusions, departures, departure labels |
+| `test/gameFlow.test.js` | Pending game, sit-outs, close warning, matchup, late-arrival candidates |
 | `test/teamColors.test.js` | Team ball colors: order, wrap, lookup by id |
 | `test/teamUtils.test.js` | `buildTeams` (random), `buildSnakeDraftTeams` (snake draft), `shuffle` |
 

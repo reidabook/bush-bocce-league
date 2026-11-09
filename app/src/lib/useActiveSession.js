@@ -13,18 +13,24 @@ export function fetchSessionsCached({ force = false } = {}) {
   return cache.promise
 }
 
+const listeners = new Set()
+
+// Call after anything that changes session status; the tab bar refetches.
 export function invalidateSessionsCache() {
   cache = { at: 0, promise: null }
+  listeners.forEach((fn) => fn())
 }
 
 export function useActiveSession() {
   const [active, setActive] = useState(null)
   useEffect(() => {
     let alive = true
-    fetchSessionsCached()
+    const load = () => fetchSessionsCached()
       .then((s) => { if (alive) setActive(s.find((x) => x.status === 'active') || null) })
       .catch(() => {})
-    return () => { alive = false }
+    load()
+    listeners.add(load)
+    return () => { alive = false; listeners.delete(load) }
   }, [])
   return active
 }

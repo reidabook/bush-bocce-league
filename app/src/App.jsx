@@ -1,4 +1,4 @@
-import { Routes, Route, Navigate } from 'react-router-dom'
+import { Routes, Route, Navigate, useParams } from 'react-router-dom'
 import Layout from './components/Layout'
 import Home from './pages/Home'
 import SessionList from './pages/SessionList'
@@ -9,13 +9,17 @@ import AdminLogin from './pages/admin/AdminLogin'
 import AdminDashboard from './pages/admin/AdminDashboard'
 import AdminRoster from './pages/admin/AdminRoster'
 import AdminNewSession from './pages/admin/AdminNewSession'
-import AdminSessionManage from './pages/admin/AdminSessionManage'
 import AdminTournament from './pages/admin/AdminTournament'
 import AdminChat from './pages/admin/AdminChat'
 import { isAdmin } from './lib/auth'
 
 function RequireAdmin({ children }) {
   return isAdmin() ? children : <Navigate to="/admin/login" replace />
+}
+
+function SessionRedirect() {
+  const { id } = useParams()
+  return <Navigate to={`/sessions/${id}`} replace />
 }
 
 export default function App() {
@@ -35,7 +39,7 @@ export default function App() {
       <Route path="/admin" element={<RequireAdmin><Layout><AdminDashboard /></Layout></RequireAdmin>} />
       <Route path="/admin/roster" element={<RequireAdmin><Layout><AdminRoster /></Layout></RequireAdmin>} />
       <Route path="/admin/sessions/new" element={<RequireAdmin><Layout><AdminNewSession /></Layout></RequireAdmin>} />
-      <Route path="/admin/sessions/:id" element={<RequireAdmin><Layout><AdminSessionManage /></Layout></RequireAdmin>} />
+      <Route path="/admin/sessions/:id" element={<SessionRedirect />} />
       <Route path="/admin/tournament" element={<RequireAdmin><Layout><AdminTournament /></Layout></RequireAdmin>} />
       <Route path="/admin/chat" element={<RequireAdmin><Layout><AdminChat /></Layout></RequireAdmin>} />
 

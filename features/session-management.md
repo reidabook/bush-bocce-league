@@ -48,33 +48,17 @@ Locking teams saves the week (status → `active`) and navigates to the week man
 
 ---
 
-## Week management (`/admin/weeks/:id`)
+## Commissioner controls (on the Session screen)
 
-### Header
-- Displays week number, date, and status badge.
-- **Edit date:** tap the "Edit date" link next to the date to open an inline date picker with Save/Cancel.
-- **Delete Week:** red button at the bottom — permanently removes the week and all cascading data (attendees, teams, games, departures, exclusions). Requires confirmation.
+Same screen as everyone else, plus controls (`src/pages/session/`). `/admin/sessions/:id` redirects to `/sessions/:id`.
 
-### Teams panel
-Lists all teams with their players. Each player row has a **"Left"** button (red pill) to log an early departure, or **"Undo"** (blue pill) to reverse it. Departed players are shown struck-through and faded. All buttons meet 44px minimum touch target.
-
-**Late arrivals:** each team card has a dashed "+ Add late arrival" button when any rostered players are not yet assigned to a team. Tapping it reveals a list of unassigned players; tapping a name adds them to that team and to the week's attendee list.
-
-### Add Game (active weeks only)
-- With 2 teams: no selection needed — always the only two teams.
-- With 3+ teams: commissioner taps two team buttons to select the playing teams before adding the game. The unselected team(s) DNP.
-- Optional notes field.
-- Game is created with no winner.
-
-### Game results
-Each game card shows:
-- Game number, Delete button
-- **If no result:** "Who won?" with a button per team
-- **If result recorded:** winner / loser display with a (clear) button
-- **Player exceptions** (collapsible, active weeks only): all players from both teams listed as tappable chips. Tapping excludes/includes a player from that specific game. Excluded players appear red/strikethrough. Auto-opens if any exclusions exist. Use for: late arrivals who missed specific games.
-
-### Close Week
-Marks status `completed`; points are now counted in standings. Warns if any games lack a result. Completed weeks can be reopened.
+- **Session options (⋯ next to the title):** change date · **Close session** (warns if games have no result; closing adds points to standings) / **Reopen session** · **Delete session** (confirm; removes teams, games, departures, exclusions).
+- **Pending game card** (active sessions): the newest game with no result. "Game N · Who won?" with one big ball button per team; tapping records the winner and shows "Kat's won game 4. Undo" (undo clears the result). Notes which team(s) sit out. Player chips: tap anyone who didn't play this game → per-game exclusion (dashed, struck through); tap again to restore.
+- **Games list:** pencil on every game → sheet with winner buttons (change winner), **Clear result**, player exclusion chips, **Delete game** (confirm).
+- **+ Game** (docked above the tab bar, active sessions): with 2 teams adds a game immediately; with 3+ opens a sheet to pick the two teams (others sit out) + optional note.
+- **Teams & who left early:** sheet listing every team. Per player **Left early** (logs a departure now — no points in later games) or **Undo**. Per team **Add late arrival** when roster players aren't on a team: tap a name to add them to that team and the attendee list.
+- Errors show inline ("That didn't save: …"); actions run one at a time.
+- Completed sessions keep every control except + Game and the pending card.
 
 ---
 
@@ -95,7 +79,7 @@ Marks status `completed`; points are now counted in standings. Warns if any game
 ## Edge cases
 
 - **Same-date sessions:** fully supported — create a second week entry with the same date. Sessions attended counts it as one night (date-deduplicated).
-- **Player joins late:** add them to the team as normal; use "Player exceptions" in each game they *didn't* play to exclude them from those games' points.
-- **Player leaves early:** use the "left" button in the Teams panel. All games recorded after that timestamp will not count for them.
+- **Player joins late:** "Add late arrival" in Teams & who left early; then tap their chip on each game they *didn't* play.
+- **Player leaves early:** "Left early" in Teams & who left early. All games recorded after that timestamp will not count for them.
 - **3-team round-robin:** each game, select the two playing teams. The third team's players automatically earn 0 for that game (they're not in `team_a_id` or `team_b_id`).
 - **Captain name collision:** if two teams have players with the same first name as alphabetical leader, both teams will display the same name. They are still uniquely identified by ID; rename a player in the roster to resolve.
