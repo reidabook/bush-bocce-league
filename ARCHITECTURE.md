@@ -117,8 +117,8 @@ Tiebreaker order: points → win rate → name (alpha).
 | `src/components/Layout.jsx` | Header with ridge edge + bottom tab bar |
 | `src/components/CommishMenu.jsx` | Commissioner sheet: start/go to tonight, roster, tournament, log out |
 | `src/components/ui.jsx`, `Ball.jsx` | Design-system primitives (see `features/design-system.md`) |
-| `src/lib/teamUtils.js` | Pure team-building: `buildTeams` (random), `buildSnakeDraftTeams` (snake draft) |
-| `src/pages/admin/AdminNewSession.jsx` | 2-step session creation: date/team-count → attendees → team assignment (random/snake/manual) |
+| `src/lib/teamUtils.js` | Pure team-building: `buildTeams` (random), `buildSnakeDraftTeams` (snake draft), `moveToNextTeam`, `teamsFromAssignment`, `captainName` |
+| `src/pages/admin/AdminNewSession.jsx` | Full-screen 2-step flow: who's here (date, teams, attendees, split mode) → teams (random/snake/manual) |
 | `src/pages/session/commish.jsx` | Commissioner controls: pending game card, game/add-game/teams/options sheets |
 | `src/pages/session/Assistant.jsx` | Docked AI assistant composer + conversation sheet |
 | `src/lib/chatClient.js` | `buildChatRequest`, `sendChat` for `/api/chat` |
@@ -151,7 +151,7 @@ Red Team · Blue Team · Green Team · Yellow Team · Purple Team · Orange Team
 | `test/gameFlow.test.js` | Pending game, sit-outs, close warning, matchup, late-arrival candidates |
 | `test/chatClient.test.js` | Chat request context mapping |
 | `test/teamColors.test.js` | Team ball colors: order, wrap, lookup by id |
-| `test/teamUtils.test.js` | `buildTeams` (random), `buildSnakeDraftTeams` (snake draft), `shuffle` |
+| `test/teamUtils.test.js` | `buildTeams`, `buildSnakeDraftTeams`, `shuffle`, `captainName`, `moveToNextTeam`, `teamsFromAssignment` |
 
 Run: `node node_modules/vitest/dist/cli.js run` from `app/`  
 The `npm run build` script runs tests first — failing tests block Vercel deploys.

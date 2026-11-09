@@ -29,6 +29,8 @@ CSS variables on `:root`, swapped under `prefers-color-scheme: dark`, exposed to
 
 A team's color = its position when the session's teams are sorted by name (same order the API returns): red `#C8372D`, green `#2E8B57`, blue `#2D6CDF`, yellow `#E3B23C`, then purple, orange. Nothing stored. `Ball` renders a shaded sphere; `pallino` variant marks the standings leader.
 
+While teams are being built (New session), random/snake teams are listed in color order; manual mode uses numbered slots because colors aren't settled until captains are.
+
 ## Shell (`components/Layout.jsx`)
 
 Navy header (logo, wordmark, commissioner button) ending in a mountain-ridge SVG edge. Fixed bottom tab bar: Standings · Tonight · Sessions · Rules; red dot on Tonight while a session is active (`useActiveSession`, 60s cache).

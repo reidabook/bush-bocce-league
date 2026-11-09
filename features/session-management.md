@@ -26,6 +26,41 @@ One screen for every session, for everyone (`docs/adr/0001-one-session-screen.md
 
 ---
 
+## Creation flow (`/admin/sessions/new`)
+
+Full-screen flow (no tab bar). Navy header shows "Step N of 2"; X cancels, ‹ goes back to step 1.
+
+**Step 1 — Who's here?**
+- Date (defaults to today) and number of teams (2 / 3 / 4) side by side.
+- "N of M playing" with **Select all / Clear all**; checkbox rows show each player's season points. Everyone starts checked.
+- Sticky footer: how to split (**Random · Snake draft · Manual**) with a one-line hint, then **Make N teams →** / **Place N players →**. Needs at least one player per team.
+
+**Step 2 — teams**
+
+| Mode | Behaviour |
+|------|-----------|
+| Random | Fisher-Yates shuffle, dealt round-robin. **Reshuffle** deals again. |
+| Snake draft | Draft order by season points (desc); new players last. **Re-draft** rebuilds. |
+| Manual | Each player row has numbered team buttons (1…N); header shows count per team and "N to place". Start is enabled once everyone is placed. |
+
+Random/snake show team cards in ball-color order (ball + captain name + player count). Each player has a "→ ●" button that moves them to the next team (color shown). Captain = alphabetically-first player; team name `"{FirstName}'s Team"`; names update live.
+
+**Lock teams & start** creates the session (number = count + 1), saves attendees and teams, sets status `active`, and opens **Tonight**.
+
+---
+
+## Session screen (`/sessions/:id`, `/tonight`)
+
+One screen for every session, for everyone (`docs/adr/0001-one-session-screen.md`). `/tonight` shows the active session; with none: "No session tonight" (commissioner gets "Start a session").
+
+- **Header:** active → red Live label, "Tonight", "Session N · date". Otherwise → "Session N" eyebrow, full date, game count.
+- **Teams:** grid of cards (3 across for 3 teams, else 2), team ball + short name, each player with points earned this session. Players who left early are muted with "left after Game N".
+- **Games:** newest first. "N ● Winner beat ● Loser"; pending games show "vs" and an **In play** pill. Notes in small italics.
+- **Footnote (active only):** "Win = 4 pts, loss = 1. Tonight's points join the standings when the session closes."
+- Points per player (`src/lib/sessionStats.js`) follow standings rules. The old separate "Tonight's Score" table (rank/W/GP) was folded into the team cards.
+
+---
+
 ## Creation flow (`/admin/weeks/new`)
 
 **Step 1 — Setup**

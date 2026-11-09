@@ -36,7 +36,7 @@ export default function App() {
       {/* Admin routes */}
       <Route path="/admin" element={<RequireAdmin><Navigate to="/?commish=1" replace /></RequireAdmin>} />
       <Route path="/admin/roster" element={<RequireAdmin><Layout><AdminRoster /></Layout></RequireAdmin>} />
-      <Route path="/admin/sessions/new" element={<RequireAdmin><Layout><AdminNewSession /></Layout></RequireAdmin>} />
+      <Route path="/admin/sessions/new" element={<RequireAdmin><AdminNewSession /></RequireAdmin>} />
       <Route path="/admin/sessions/:id" element={<SessionRedirect />} />
       <Route path="/admin/tournament" element={<RequireAdmin><Layout><AdminTournament /></Layout></RequireAdmin>} />
       <Route path="/admin/chat" element={<Navigate to="/tonight" replace />} />
