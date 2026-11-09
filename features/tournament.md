@@ -6,15 +6,15 @@ End-of-season single-elimination bracket seeded by regular-season standings. Com
 
 ## Flow
 
-1. Commissioner navigates to `/admin/tournament` and clicks "Start Tournament".
+1. Commissioner opens the commissioner menu → Tournament (`/admin/tournament`), reviews the seed list, and taps **Seed & start tournament** (confirm).
 2. App seeds players by standings (highest points = top seed). Tiebreaker same as standings.
 3. Bracket is generated: first round matches pair seed 1 vs last seed, seed 2 vs second-to-last, etc. Odd player count gets a bye.
-4. Commissioner records each match result — winner advances automatically.
-5. Commissioner clicks "Complete Tournament" when the final is done.
+4. Commissioner taps the winner's name on each match — winner advances automatically. **Clear** undoes a result.
+5. Commissioner taps **Mark tournament complete** when the final is done.
 
 ## Public view (`/tournament`)
 
-Read-only bracket showing all rounds, current match highlighted, champion displayed when complete.
+Read-only: rounds as sections (Round N / Semifinal / Final), each match "A vs B" with the winner bold and loser muted, byes noted. Champion card (pallino + name) once the final has a winner. Not linked from the tab bar (hidden by choice); reachable by URL and from the commissioner menu. Helpers: `src/lib/bracket.js`.
 
 ## Data
 

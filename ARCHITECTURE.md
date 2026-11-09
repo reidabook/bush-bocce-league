@@ -112,6 +112,7 @@ Tiebreaker order: points → win rate → name (alpha).
 | `src/lib/standingsSort.js` | `sortStandings`, `nextSort`, `fmtWinPct` |
 | `src/components/ErrorState.jsx` | Shared load-error card (retry, init sheet tabs) |
 | `src/lib/sessionGroups.js` | `groupSessionsByMonth`, `dayParts`, status labels |
+| `src/lib/bracket.js` | `groupByRound`, `roundLabel`, `champion` |
 | `src/lib/teamColors.js` | Team ball color by alphabetical team position (`teamColor`, `teamColorById`) |
 | `src/lib/useActiveSession.js` | Cached active-session lookup for the tab bar live dot |
 | `src/components/Layout.jsx` | Header with ridge edge + bottom tab bar |
@@ -150,6 +151,7 @@ Red Team · Blue Team · Green Team · Yellow Team · Purple Team · Orange Team
 | `test/sessionStats.test.js` | Per-session points, exclusions, departures, departure labels |
 | `test/gameFlow.test.js` | Pending game, sit-outs, close warning, matchup, late-arrival candidates |
 | `test/chatClient.test.js` | Chat request context mapping |
+| `test/bracket.test.js` | Round grouping/labels, champion |
 | `test/teamColors.test.js` | Team ball colors: order, wrap, lookup by id |
 | `test/teamUtils.test.js` | `buildTeams`, `buildSnakeDraftTeams`, `shuffle`, `captainName`, `moveToNextTeam`, `teamsFromAssignment` |
 
