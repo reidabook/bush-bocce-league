@@ -27,7 +27,7 @@ CSS variables on `:root`, swapped under `prefers-color-scheme: dark`, exposed to
 
 ## Team balls (`src/lib/teamColors.js`, `components/Ball.jsx`)
 
-A team's color = its position when the session's teams are sorted by name (same order the API returns): red `#C8372D`, green `#2E8B57`, blue `#2D6CDF`, yellow `#E3B23C`, then purple, orange. Nothing stored. `Ball` renders a shaded sphere; `pallino` variant marks the standings leader.
+A team's color = its position when the session's teams are sorted by name (same order the API returns): red `#C8372D`, green `#2E8B57`, blue `#2D6CDF`, yellow `#E3B23C`, then purple, orange. Nothing stored. Red + green are the league's real balls, so 2-team sessions are always red vs green; other colors only appear with 3+ teams. `Ball` renders a shaded sphere; `pallino` variant marks the standings leader.
 
 While teams are being built (New session), random/snake teams are listed in color order; manual mode uses numbered slots because colors aren't settled until captains are.
 

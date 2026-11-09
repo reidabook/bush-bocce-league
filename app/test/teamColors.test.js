@@ -35,3 +35,13 @@ describe('shortTeamName', () => {
     expect(shortTeamName('Red')).toBe('Red')
   })
 })
+
+describe('real-world sets', () => {
+  it('2-team sessions use the league balls: red + green', () => {
+    const teams = [{ id: 'x', name: "Zoe's Team" }, { id: 'y', name: "Al's Team" }]
+    expect([teamColorById(teams, 'y'), teamColorById(teams, 'x')]).toEqual(['#C8372D', '#2E8B57'])
+  })
+  it('extra colors only appear from the 3rd team on', () => {
+    expect(teamColor(2)).toBe('#2D6CDF')
+  })
+})
