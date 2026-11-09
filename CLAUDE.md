@@ -35,6 +35,7 @@
 - Run `npm test` before merging to main. Tests must pass — the build (`npm run build`) will also run them, so failing tests block Vercel deploys.
 - Tests live in `app/test/*.test.js` and use Vitest. Pure logic only — no Google Sheets I/O. Mock fixtures go inline in the test file.
 - Run: `node node_modules/vitest/dist/cli.js run` from `app/`.
+- UI flows: Playwright e2e in `app/e2e/` (`npm run e2e`). Runs against a fake in-memory backend — never the real sheet. Add/adjust an e2e test when a user-facing flow changes.
 
 ## MANDATORY: Keep documentation current
 After every change — no exceptions — update whichever of these are affected:

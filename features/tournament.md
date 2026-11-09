@@ -8,8 +8,8 @@ End-of-season single-elimination bracket seeded by regular-season standings. Com
 
 1. Commissioner opens the commissioner menu → Tournament (`/admin/tournament`), reviews the seed list, and taps **Seed & start tournament** (confirm).
 2. App seeds players by standings (highest points = top seed). Tiebreaker same as standings.
-3. Bracket is generated: first round matches pair seed 1 vs last seed, seed 2 vs second-to-last, etc. Odd player count gets a bye.
-4. Commissioner taps the winner's name on each match — winner advances automatically. **Clear** undoes a result.
+3. Bracket is generated with every round laid out up front (`api/_bracketLogic.js`). Size rounds up to a power of two; standard seeding (1v8, 4v5, 2v7, 3v6…) so top seeds meet late. Missing spots become **byes for the top seeds**, who are placed straight into round 2.
+4. Commissioner taps the winner's name on each match — winner moves into a fixed slot of the next match (odd position → first slot, even → second). Matches waiting on earlier games show "waiting on earlier games" with no buttons. Recording the final doesn't create another round. **Clear** undoes a result and removes that player from the next match.
 5. Commissioner taps **Mark tournament complete** when the final is done.
 
 ## Public view (`/tournament`)
@@ -26,5 +26,6 @@ Read-only: rounds as sections (Round N / Semifinal / Final), each match "A vs B"
 ## Notes
 
 - Only one tournament per season (one row in `tournament` table).
-- Byes: `is_bye = true`, one player set, no opponent — winner advances automatically.
+- Byes: `is_bye = true`, one player set, no opponent, `winner_id` set and already placed in round 2.
+- Brackets created before this change (rounds added on demand) still advance correctly.
 - Format is always `single_elimination` (v1).
