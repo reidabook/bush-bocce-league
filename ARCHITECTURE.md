@@ -12,8 +12,8 @@ React SPA (Vite) + Vercel serverless API. No traditional backend — all persist
 |------|-----------|------|-------------|
 | `/` | `Home` | Public | Standings leaderboard + active session card |
 | `/sessions` | `SessionList` | Public | All sessions list |
-| `/sessions/:id` | `SessionDetail` | Public | Session detail: teams, games, player points |
-| `/tonight` | `ActiveSession` | Public | Live view of the active session (`/active` redirects here) |
+| `/sessions/:id` | `Session` | Public (+ commissioner controls) | One Session screen for any session (ADR 0001) |
+| `/tonight` | `Session tonight` | Public (+ commissioner controls) | The active session in the Session screen (`/active` redirects here) |
 | `/tournament` | `Tournament` | Public | Tournament bracket |
 | `/rules` | `Rules` | Public | Scoring rules |
 | `/admin/login` | `AdminLogin` | Public | Password gate |
@@ -119,7 +119,8 @@ Tiebreaker order: points → win rate → name (alpha).
 | `src/lib/teamUtils.js` | Pure team-building: `buildTeams` (random), `buildSnakeDraftTeams` (snake draft) |
 | `src/pages/admin/AdminNewSession.jsx` | 2-step session creation: date/team-count → attendees → team assignment (random/snake/manual) |
 | `src/pages/admin/AdminSessionManage.jsx` | Active session management: add games, record winners, log departures, per-game player exclusions |
-| `src/pages/ActiveSession.jsx` | Live view + Gemini AI chat for hands-free logging |
+| `src/pages/Session.jsx` | One Session screen: header, teams w/ per-player points, games newest first |
+| `src/lib/sessionStats.js` | `computeSessionStats`, `departureLabel` |
 | `api/_db.js` | All Google Sheets read/write logic |
 | `api/_standingsLogic.js` | Pure standings computation (`computeStandings`) — no I/O, tested |
 | `api/sheets.js` | Action router for `/api/sheets` |
@@ -140,6 +141,7 @@ Red Team · Blue Team · Green Team · Yellow Team · Purple Team · Orange Team
 | `test/standings.test.js` | `computeStandings`: basic scoring, exclusions, departures, historical stats, sort order |
 | `test/standingsSort.test.js` | Standings sort by column/direction + tiebreakers |
 | `test/sessionGroups.test.js` | Month grouping, same-date order, year labels |
+| `test/sessionStats.test.js` | Per-session points, exclusions, departures, departure labels |
 | `test/teamColors.test.js` | Team ball colors: order, wrap, lookup by id |
 | `test/teamUtils.test.js` | `buildTeams` (random), `buildSnakeDraftTeams` (snake draft), `shuffle` |
 

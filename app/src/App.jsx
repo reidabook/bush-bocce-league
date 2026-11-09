@@ -2,7 +2,7 @@ import { Routes, Route, Navigate } from 'react-router-dom'
 import Layout from './components/Layout'
 import Home from './pages/Home'
 import SessionList from './pages/SessionList'
-import SessionDetail from './pages/SessionDetail'
+import Session from './pages/Session'
 import Tournament from './pages/Tournament'
 import Rules from './pages/Rules'
 import AdminLogin from './pages/admin/AdminLogin'
@@ -12,7 +12,6 @@ import AdminNewSession from './pages/admin/AdminNewSession'
 import AdminSessionManage from './pages/admin/AdminSessionManage'
 import AdminTournament from './pages/admin/AdminTournament'
 import AdminChat from './pages/admin/AdminChat'
-import ActiveSession from './pages/ActiveSession'
 import { isAdmin } from './lib/auth'
 
 function RequireAdmin({ children }) {
@@ -25,9 +24,9 @@ export default function App() {
       {/* Public routes */}
       <Route path="/" element={<Layout><Home /></Layout>} />
       <Route path="/sessions" element={<Layout><SessionList /></Layout>} />
-      <Route path="/sessions/:id" element={<Layout><SessionDetail /></Layout>} />
+      <Route path="/sessions/:id" element={<Layout><Session /></Layout>} />
       <Route path="/tournament" element={<Layout><Tournament /></Layout>} />
-      <Route path="/tonight" element={<Layout><ActiveSession /></Layout>} />
+      <Route path="/tonight" element={<Layout><Session tonight /></Layout>} />
       <Route path="/active" element={<Navigate to="/tonight" replace />} />
       <Route path="/rules" element={<Layout><Rules /></Layout>} />
       <Route path="/admin/login" element={<Layout><AdminLogin /></Layout>} />

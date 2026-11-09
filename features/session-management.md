@@ -14,6 +14,18 @@ Newest first, grouped by month (year added for older years). Each row: day numbe
 
 ---
 
+## Session screen (`/sessions/:id`, `/tonight`)
+
+One screen for every session, for everyone (`docs/adr/0001-one-session-screen.md`). `/tonight` shows the active session; with none: "No session tonight" (commissioner gets "Start a session").
+
+- **Header:** active → red Live label, "Tonight", "Session N · date". Otherwise → "Session N" eyebrow, full date, game count.
+- **Teams:** grid of cards (3 across for 3 teams, else 2), team ball + short name, each player with points earned this session. Players who left early are muted with "left after Game N".
+- **Games:** newest first. "N ● Winner beat ● Loser"; pending games show "vs" and an **In play** pill. Notes in small italics.
+- **Footnote (active only):** "Win = 4 pts, loss = 1. Tonight's points join the standings when the session closes."
+- Points per player (`src/lib/sessionStats.js`) follow standings rules. The old separate "Tonight's Score" table (rank/W/GP) was folded into the team cards.
+
+---
+
 ## Creation flow (`/admin/weeks/new`)
 
 **Step 1 — Setup**
