@@ -42,3 +42,17 @@ After every change — no exceptions — update whichever of these are affected:
 - `features/*.md` — any feature's behaviour, layout, or data flow
 
 Documentation updates must be in the same commit as the code change.
+
+## Agent skills
+
+### Issue tracker
+
+GitHub Issues (reidabook/bush-bocce-league) via `gh`. See `docs/agents/issue-tracker.md`.
+
+### Triage labels
+
+Default five: needs-triage, needs-info, ready-for-agent, ready-for-human, wontfix. See `docs/agents/triage-labels.md`.
+
+### Domain docs
+
+Single-context: root `GLOSSARY.md` + `docs/adr/`. See `docs/agents/domain.md`.
