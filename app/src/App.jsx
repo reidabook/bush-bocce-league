@@ -6,7 +6,6 @@ import Session from './pages/Session'
 import Tournament from './pages/Tournament'
 import Rules from './pages/Rules'
 import AdminLogin from './pages/admin/AdminLogin'
-import AdminDashboard from './pages/admin/AdminDashboard'
 import AdminRoster from './pages/admin/AdminRoster'
 import AdminNewSession from './pages/admin/AdminNewSession'
 import AdminTournament from './pages/admin/AdminTournament'
@@ -35,7 +34,7 @@ export default function App() {
       <Route path="/admin/login" element={<Layout><AdminLogin /></Layout>} />
 
       {/* Admin routes */}
-      <Route path="/admin" element={<RequireAdmin><Layout><AdminDashboard /></Layout></RequireAdmin>} />
+      <Route path="/admin" element={<RequireAdmin><Navigate to="/?commish=1" replace /></RequireAdmin>} />
       <Route path="/admin/roster" element={<RequireAdmin><Layout><AdminRoster /></Layout></RequireAdmin>} />
       <Route path="/admin/sessions/new" element={<RequireAdmin><Layout><AdminNewSession /></Layout></RequireAdmin>} />
       <Route path="/admin/sessions/:id" element={<SessionRedirect />} />

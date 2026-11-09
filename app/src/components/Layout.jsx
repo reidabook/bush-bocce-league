@@ -1,4 +1,6 @@
-import { Link, NavLink } from 'react-router-dom'
+import { useState } from 'react'
+import { Link, NavLink, useSearchParams } from 'react-router-dom'
+import CommishMenu from './CommishMenu'
 import { isAdmin } from '../lib/auth'
 import { useActiveSession } from '../lib/useActiveSession'
 import { Icon } from './ui'
@@ -32,6 +34,13 @@ export function Header({ children }) {
 export default function Layout({ children }) {
   const admin = isAdmin()
   const active = useActiveSession()
+  const [params, setParams] = useSearchParams()
+  const [menuOpen, setMenuOpen] = useState(false)
+  const menu = admin && (menuOpen || params.get('commish') === '1')
+  function closeMenu() {
+    setMenuOpen(false)
+    if (params.get('commish')) { params.delete('commish'); setParams(params, { replace: true }) }
+  }
 
   return (
     <div className="flex flex-col min-h-svh">
@@ -44,9 +53,12 @@ export default function Layout({ children }) {
           </span>
         </Link>
         {admin ? (
-          <Link to="/admin" className="ml-auto h-9 px-3 rounded-full ring-[1.5px] ring-sky text-white text-[13px] font-semibold flex items-center gap-1.5">
-            <Icon name="person" size={16} /> Commish
-          </Link>
+          <button type="button" onClick={() => setMenuOpen(true)} aria-haspopup="dialog"
+            className="ml-auto h-11 px-3 -mr-1 flex items-center">
+            <span className="h-9 px-3 rounded-full ring-[1.5px] ring-sky text-white text-[13px] font-semibold flex items-center gap-1.5">
+              <Icon name="person" size={16} /> Commissioner
+            </span>
+          </button>
         ) : (
           <Link to="/admin/login" aria-label="Commissioner login" className="ml-auto w-11 h-11 flex items-center justify-center text-sky rounded-full">
             <Icon name="person" strokeWidth={1.8} />
@@ -71,6 +83,7 @@ export default function Layout({ children }) {
           ))}
         </div>
       </nav>
+      <CommishMenu open={menu} onClose={closeMenu} active={active} />
     </div>
   )
 }

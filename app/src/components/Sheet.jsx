@@ -20,7 +20,7 @@ export default function Sheet({ open, title, onClose, children, footer }) {
       <div className="absolute inset-0 bg-[#0F1C3D]/50 dark:bg-black/65" onClick={onClose} aria-hidden="true" />
       <div ref={panel} tabIndex={-1} role="dialog" aria-modal="true" aria-label={title}
         className="relative w-full max-w-lg bg-ice rounded-t-3xl max-h-[88svh] flex flex-col outline-none focus-visible:outline-none"
-        style={{ paddingBottom: 'max(16px, env(safe-area-inset-bottom))' }}>
+        style={{ paddingBottom: 'max(16px, env(safe-area-inset-bottom))', outline: 'none' }}>
         <div className="flex items-center gap-2 pl-5 pr-2 pt-3 pb-2">
           <h2 className="flex-1 font-display font-extrabold text-[22px] text-brand">{title}</h2>
           <button type="button" onClick={onClose} aria-label="Close" className="w-11 h-11 flex items-center justify-center text-muted rounded-full">

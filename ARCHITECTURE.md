@@ -16,8 +16,8 @@ React SPA (Vite) + Vercel serverless API. No traditional backend — all persist
 | `/tonight` | `Session tonight` | Public (+ commissioner controls) | The active session in the Session screen (`/active` redirects here) |
 | `/tournament` | `Tournament` | Public | Tournament bracket |
 | `/rules` | `Rules` | Public | Scoring rules |
-| `/admin/login` | `AdminLogin` | Public | Password gate |
-| `/admin` | `AdminDashboard` | Admin | Session list + links |
+| `/admin/login` | `AdminLogin` | Public | Commissioner password; success opens the commissioner menu |
+| `/admin` | redirect | Admin | → `/?commish=1` (opens the commissioner menu) |
 | `/admin/roster` | `AdminRoster` | Admin | Add/deactivate players |
 | `/admin/sessions/new` | `AdminNewSession` | Admin | 2-step session creation flow |
 | `/admin/sessions/:id` | redirect | — | → `/sessions/:id` (commissioner controls live there) |
@@ -115,6 +115,7 @@ Tiebreaker order: points → win rate → name (alpha).
 | `src/lib/teamColors.js` | Team ball color by alphabetical team position (`teamColor`, `teamColorById`) |
 | `src/lib/useActiveSession.js` | Cached active-session lookup for the tab bar live dot |
 | `src/components/Layout.jsx` | Header with ridge edge + bottom tab bar |
+| `src/components/CommishMenu.jsx` | Commissioner sheet: start/go to tonight, roster, tournament, log out |
 | `src/components/ui.jsx`, `Ball.jsx` | Design-system primitives (see `features/design-system.md`) |
 | `src/lib/teamUtils.js` | Pure team-building: `buildTeams` (random), `buildSnakeDraftTeams` (snake draft) |
 | `src/pages/admin/AdminNewSession.jsx` | 2-step session creation: date/team-count → attendees → team assignment (random/snake/manual) |
