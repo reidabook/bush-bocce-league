@@ -8,6 +8,12 @@ Multiple sessions can share the same calendar date (e.g. when teams re-form mid-
 
 ---
 
+## Sessions list (`/sessions`)
+
+Newest first, grouped by month (year added for older years). Each row: day number + weekday, "Session N", status line (Final / Archived stats / Setting up) or a red **Live** pill for the active session. Rows link to the session (active → `/tonight`). Grouping: `src/lib/sessionGroups.js`.
+
+---
+
 ## Creation flow (`/admin/weeks/new`)
 
 **Step 1 — Setup**

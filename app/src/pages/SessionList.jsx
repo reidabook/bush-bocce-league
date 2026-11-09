@@ -1,103 +1,60 @@
 import { useEffect, useState } from 'react'
 import { Link } from 'react-router-dom'
-import { getSessions } from '../lib/db'
-import Spinner from '../components/Spinner'
-
-const statusLabel = {
-  setup: { text: 'Setting up', color: '#89B4D0' },
-  active: { text: 'In Progress', color: '#16a34a' },
-  completed: { text: 'Completed', color: '#6b7280' },
-  historical: { text: 'Completed', color: '#6b7280' },
-}
+import { fetchSessionsCached } from '../lib/useActiveSession'
+import { groupSessionsByMonth, dayParts, STATUS_TEXT } from '../lib/sessionGroups'
+import { PageTitle, SectionLabel, Card, Pill, EmptyState, SkeletonList, Icon } from '../components/ui'
+import ErrorState from '../components/ErrorState'
 
 export default function SessionList() {
-  const [sessions, setSessions] = useState([])
-  const [loading, setLoading] = useState(true)
+  const [sessions, setSessions] = useState(null)
   const [error, setError] = useState(null)
-  const [initializing, setInitializing] = useState(false)
-  const [initResult, setInitResult] = useState(null)
 
   useEffect(() => {
-    getSessions()
-      .then(setSessions)
-      .catch((e) => setError(e.message))
-      .finally(() => setLoading(false))
+    fetchSessionsCached({ force: true }).then(setSessions).catch((e) => setError(e.message))
   }, [])
 
-  async function handleInit() {
-    setInitializing(true)
-    setInitResult(null)
-    try {
-      const res = await fetch('/api/init-sheets')
-      const data = await res.json()
-      const created = data.sheets?.filter((s) => s.action === 'created').length ?? 0
-      setInitResult({ ok: true, message: `Done! Created ${created} sheet(s). Reloading…` })
-      setTimeout(() => window.location.reload(), 1200)
-    } catch (err) {
-      setInitResult({ ok: false, message: err.message })
-      setInitializing(false)
-    }
-  }
-
-  if (loading) return <Spinner />
-  if (error) return (
-    <div className="rounded-xl border border-red-200 bg-red-50 p-4 space-y-2">
-      <p className="font-semibold text-red-700 text-sm">Failed to load sessions</p>
-      <p className="text-red-600 text-xs font-mono break-all">{error}</p>
-      {error.includes('not found') && (
-        <div className="pt-1 space-y-1">
-          <button
-            onClick={handleInit}
-            disabled={initializing}
-            className="text-xs bg-red-700 text-white px-3 py-1.5 rounded-lg disabled:opacity-50"
-          >
-            {initializing ? 'Initializing…' : 'Initialize database'}
-          </button>
-          {initResult && (
-            <p className={`text-xs ${initResult.ok ? 'text-green-700' : 'text-red-600'}`}>
-              {initResult.message}
-            </p>
-          )}
-        </div>
-      )}
-      <p className="text-red-500 text-xs">Visit <a href="/api/debug" className="underline" target="_blank">/api/debug</a> for connection details.</p>
-    </div>
-  )
+  if (error) return <ErrorState title="Couldn't load sessions" error={error} />
 
   return (
-    <div>
-      <h2 className="text-xs font-bold uppercase tracking-widest mb-3 opacity-50">
-        All Sessions
-      </h2>
-      {sessions.length === 0 ? (
-        <p className="text-sm opacity-50 text-center py-8">No sessions yet.</p>
+    <div className="space-y-4">
+      <PageTitle title="Sessions">
+        {sessions && <span className="text-[13px] text-muted pb-0.5">{sessions.length} sessions</span>}
+      </PageTitle>
+
+      {!sessions ? (
+        <SkeletonList rows={5} height={64} />
+      ) : sessions.length === 0 ? (
+        <EmptyState title="No sessions yet">The commissioner starts one on game night.</EmptyState>
       ) : (
-        <div className="space-y-2">
-          {sessions.map((session) => {
-            const s = statusLabel[session.status] || statusLabel.setup
-            return (
-              <Link
-                key={session.id}
-                to={`/sessions/${session.id}`}
-                className="flex items-center justify-between bg-white rounded-xl px-4 py-4 shadow-sm hover:shadow-md transition-shadow"
-              >
-                <div>
-                  <div className="font-bold" style={{ color: '#1B2F5E' }}>
-                    Session {session.session_number}
-                  </div>
-                  <div className="text-sm opacity-60">
-                    {new Date(session.date + 'T12:00:00').toLocaleDateString('en-US', {
-                      weekday: 'long', month: 'long', day: 'numeric',
-                    })}
-                  </div>
-                </div>
-                <div className="text-xs font-medium px-2 py-1 rounded-full" style={{ color: s.color, backgroundColor: s.color + '20' }}>
-                  {s.text}
-                </div>
-              </Link>
-            )
-          })}
-        </div>
+        groupSessionsByMonth(sessions).map((g) => (
+          <section key={g.key}>
+            <SectionLabel>{g.label}</SectionLabel>
+            <Card className="overflow-hidden">
+              <ul>
+                {g.sessions.map((s) => {
+                  const { day, dow } = dayParts(s.date)
+                  const live = s.status === 'active'
+                  return (
+                    <li key={s.id} className="border-t border-hair first:border-t-0">
+                      <Link to={live ? '/tonight' : `/sessions/${s.id}`} className="flex items-center gap-3.5 px-3.5 py-2.5 min-h-[60px]">
+                        <div className="w-10 flex flex-col items-center leading-none">
+                          <span className="font-display font-black text-[28px] text-brand tabular">{day}</span>
+                          <span className="text-[11px] font-bold tracking-[.08em] text-muted">{dow}</span>
+                        </div>
+                        <div className="flex-1 min-w-0">
+                          <div className="font-semibold text-base">Session {s.session_number}</div>
+                          {!live && <div className="text-[13px] text-muted">{STATUS_TEXT[s.status] ?? s.status}</div>}
+                        </div>
+                        {live && <Pill>Live</Pill>}
+                        <Icon name="chevron" size={18} className="text-muted" />
+                      </Link>
+                    </li>
+                  )
+                })}
+              </ul>
+            </Card>
+          </section>
+        ))
       )}
     </div>
   )
